@@ -16,14 +16,23 @@ add_library(rts_math INTERFACE)
 target_include_directories(rts_math INTERFACE "${CMAKE_SOURCE_DIR}/src")
 target_compile_features(rts_math INTERFACE cxx_std_17)
 
+find_package(SDL2 CONFIG REQUIRED)
+add_library(rts_platform src/platform/Window.cpp)
+target_include_directories(rts_platform PUBLIC "${CMAKE_SOURCE_DIR}/src")
+target_link_libraries(rts_platform PUBLIC SDL2::SDL2)
+
+add_executable(rts_game src/main.cpp)
+target_link_libraries(rts_game PRIVATE rts_platform)
+
 enable_testing()
 find_package(Catch2 3 CONFIG REQUIRED)
 
 add_executable(rts_tests
     tests/math/Vector2Tests.cpp
     tests/core/LoggerTests.cpp
+    tests/platform/WindowTests.cpp
 )
-target_link_libraries(rts_tests PRIVATE rts_math Catch2::Catch2WithMain)
+target_link_libraries(rts_tests PRIVATE rts_math rts_platform Catch2::Catch2WithMain)
 
 include(Catch)
 catch_discover_tests(rts_tests)

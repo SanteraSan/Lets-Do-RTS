@@ -2,6 +2,11 @@
   "name": "lets-do-rts",
   "version-semver": "0.1.0",
   "dependencies": [
-    "catch2"
+    "catch2",
+    {
+      "name": "sdl2",
+      "default-features": false,
+      "features": ["x11"]
+    }
   ]
 }

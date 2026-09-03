@@ -8,3 +8,5 @@ compile_commands.json
 *.user
 .vscode/
 .idea/
+engine.log
+*.log
