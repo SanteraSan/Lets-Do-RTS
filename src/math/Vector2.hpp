@@ -34,3 +34,7 @@ inline Vector2 normalize(Vector2 v) {
 inline bool almostEqual(Vector2 a, Vector2 b, float epsilon = 0.0001f) {
     return std::fabs(a.x - b.x) <= epsilon && std::fabs(a.y - b.y) <= epsilon;
 }
+
+inline float distance(Vector2 a, Vector2 b) {
+    return length(sub(a, b));
+}

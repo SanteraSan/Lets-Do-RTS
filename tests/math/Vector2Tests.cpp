@@ -81,3 +81,16 @@ TEST_CASE("Vector2 almostEqual uses the given epsilon") {
     REQUIRE(almostEqual(Vector2{0.0f, 0.0f}, Vector2{0.5f, 0.0f}, 0.6f));
     REQUIRE_FALSE(almostEqual(Vector2{0.0f, 0.0f}, Vector2{0.5f, 0.0f}, 0.4f));
 }
+
+TEST_CASE("Vector2 distance from (0,0) to (3,4) is 5") {
+    REQUIRE(distance(Vector2{0.0f, 0.0f}, Vector2{3.0f, 4.0f}) == Catch::Approx(5.0f));
+}
+
+TEST_CASE("Vector2 distance is the same in both directions") {
+    REQUIRE(distance(Vector2{1.0f, 2.0f}, Vector2{4.0f, 6.0f}) ==
+            Catch::Approx(distance(Vector2{4.0f, 6.0f}, Vector2{1.0f, 2.0f})));
+}
+
+TEST_CASE("Vector2 distance to itself is zero") {
+    REQUIRE(distance(Vector2{3.0f, -1.0f}, Vector2{3.0f, -1.0f}) == Catch::Approx(0.0f));
+}
