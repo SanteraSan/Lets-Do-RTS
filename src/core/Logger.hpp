@@ -48,7 +48,7 @@ inline std::string formatTimestamp(std::chrono::system_clock::time_point time) {
         return "0000-00-00 00:00:00";
     }
 
-    char buffer[20];
+    char buffer[80];
     std::snprintf(
         buffer,
         sizeof(buffer),
