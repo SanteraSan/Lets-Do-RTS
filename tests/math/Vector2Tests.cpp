@@ -30,3 +30,21 @@ TEST_CASE("Vector2 sub of a vector with itself is zero") {
 TEST_CASE("Vector2 length of (3,4) is 5") {
     REQUIRE(length(Vector2{3.0f, 4.0f}) == Catch::Approx(5.0f));
 }
+
+TEST_CASE("Vector2 scale multiplies both components") {
+    const Vector2 scaled = scale(Vector2{3.0f, -2.0f}, 2.0f);
+    REQUIRE(scaled.x == Catch::Approx(6.0f));
+    REQUIRE(scaled.y == Catch::Approx(-4.0f));
+}
+
+TEST_CASE("Vector2 scale by zero is zero") {
+    const Vector2 scaled = scale(Vector2{3.0f, -2.0f}, 0.0f);
+    REQUIRE(scaled.x == Catch::Approx(0.0f));
+    REQUIRE(scaled.y == Catch::Approx(0.0f));
+}
+
+TEST_CASE("Vector2 scale by negative flips direction") {
+    const Vector2 scaled = scale(Vector2{3.0f, -2.0f}, -1.0f);
+    REQUIRE(scaled.x == Catch::Approx(-3.0f));
+    REQUIRE(scaled.y == Catch::Approx(2.0f));
+}
