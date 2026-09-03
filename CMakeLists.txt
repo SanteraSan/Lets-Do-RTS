@@ -25,6 +25,7 @@ find_package(Catch2 3 CONFIG REQUIRED)
 add_executable(rts_tests
     tests/math/Vector2Tests.cpp
     tests/core/LoggerTests.cpp
+    tests/core/FixedTimestepTests.cpp
     tests/platform/WindowTests.cpp
 )
 target_link_libraries(rts_tests PRIVATE rts_math rts_platform Catch2::Catch2WithMain)
