@@ -5,12 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(RTS_ENABLE_SANITIZERS "Enable Address and Undefined sanitizers" ON)
-
-if(RTS_ENABLE_SANITIZERS AND NOT MSVC)
-    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
-    add_link_options(-fsanitize=address,undefined)
-endif()
+option(RTS_ENABLE_SANITIZERS "Enable Address and Undefined sanitizers on tests" ON)
 
 add_library(rts_math INTERFACE)
 target_include_directories(rts_math INTERFACE "${CMAKE_SOURCE_DIR}/src")
@@ -33,6 +28,11 @@ add_executable(rts_tests
     tests/platform/WindowTests.cpp
 )
 target_link_libraries(rts_tests PRIVATE rts_math rts_platform Catch2::Catch2WithMain)
+
+if(RTS_ENABLE_SANITIZERS AND NOT MSVC)
+    target_compile_options(rts_tests PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(rts_tests PRIVATE -fsanitize=address,undefined)
+endif()
 
 include(Catch)
 catch_discover_tests(rts_tests)

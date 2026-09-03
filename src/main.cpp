@@ -2,6 +2,7 @@
 #include "platform/Window.hpp"
 
 #include <iostream>
+#include <string>
 
 int main() {
     std::ofstream logFile;
@@ -15,7 +16,13 @@ int main() {
 
     Window window;
     if (!window.open({"Lets Do RTS", 1280, 720})) {
-        logger.log(LogLevel::Error, "failed to open window");
+        std::string line = "failed to open window";
+        const char* sdlError = SDL_GetError();
+        if (sdlError != nullptr && sdlError[0] != '\0') {
+            line += ": ";
+            line += sdlError;
+        }
+        logger.log(LogLevel::Error, line);
         return 1;
     }
     logger.log(LogLevel::Info, "window open");

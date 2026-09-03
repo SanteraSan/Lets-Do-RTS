@@ -23,7 +23,9 @@ alwaysApply: true
 
 ```cpp
 // ✅ GOOD
-TEST_CASE("Vector2 length of (3,4) is 5") { REQUIRE(v.length() == Catch::Approx(5.0f)); }
+TEST_CASE("Vector2 length of (3,4) is 5") {
+    REQUIRE(length(Vector2{3.0f, 4.0f}) == Catch::Approx(5.0f));
+}
 
 // ❌ BAD
 TEST_CASE("math works") { /* десять несвязанных проверок */ }
