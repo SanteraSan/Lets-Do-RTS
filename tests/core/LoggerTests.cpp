@@ -2,6 +2,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <sstream>
 #include <string>
 
@@ -76,4 +79,59 @@ TEST_CASE("Logger writes messages at minLevel") {
     Logger logger{console, nullptr, LogLevel::Info, fixedTimestamp};
     logger.log(LogLevel::Info, "start");
     REQUIRE(console.str() == "[2026-09-03 12:00:00] [INFO] start\n");
+}
+
+TEST_CASE("openLogFile rejects an empty path") {
+    std::ofstream file;
+    REQUIRE_FALSE(openLogFile(file, ""));
+    REQUIRE_FALSE(file.is_open());
+}
+
+TEST_CASE("openLogFile rejects a path that cannot be created") {
+    std::ofstream file;
+    REQUIRE_FALSE(openLogFile(file, "/no/such/lets-do-rts-dir/engine.log"));
+    REQUIRE_FALSE(file.is_open());
+}
+
+TEST_CASE("Logger writes through an ofstream opened by openLogFile") {
+    const auto path = std::filesystem::temp_directory_path() / "lets-do-rts-logger-test.log";
+    std::filesystem::remove(path);
+
+    std::ofstream file;
+    REQUIRE(openLogFile(file, path.string()));
+
+    std::ostringstream console;
+    Logger logger{console, &file, LogLevel::Debug, fixedTimestamp};
+    logger.log(LogLevel::Info, "on disk");
+    file.close();
+
+    std::ifstream in{path};
+    const std::string content{std::istreambuf_iterator<char>{in}, std::istreambuf_iterator<char>{}};
+    REQUIRE(content == "[2026-09-03 12:00:00] [INFO] on disk\n");
+    std::filesystem::remove(path);
+}
+
+TEST_CASE("openLogFile appends when the file already exists") {
+    const auto path = std::filesystem::temp_directory_path() / "lets-do-rts-logger-append.log";
+    std::filesystem::remove(path);
+
+    std::ofstream first;
+    REQUIRE(openLogFile(first, path.string()));
+    std::ostringstream console;
+    Logger firstLogger{console, &first, LogLevel::Debug, fixedTimestamp};
+    firstLogger.log(LogLevel::Info, "first");
+    first.close();
+
+    std::ofstream second;
+    REQUIRE(openLogFile(second, path.string()));
+    Logger secondLogger{console, &second, LogLevel::Debug, fixedTimestamp};
+    secondLogger.log(LogLevel::Info, "second");
+    second.close();
+
+    std::ifstream in{path};
+    const std::string content{std::istreambuf_iterator<char>{in}, std::istreambuf_iterator<char>{}};
+    REQUIRE(
+        content ==
+        "[2026-09-03 12:00:00] [INFO] first\n[2026-09-03 12:00:00] [INFO] second\n");
+    std::filesystem::remove(path);
 }

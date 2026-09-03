@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdio>
 #include <ctime>
+#include <fstream>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -73,6 +74,17 @@ inline std::string formatLogLine(
     line += message;
     line += '\n';
     return line;
+}
+
+inline bool openLogFile(std::ofstream& file, std::string_view path) {
+    if (file.is_open()) {
+        file.close();
+    }
+    if (path.empty()) {
+        return false;
+    }
+    file.open(std::string{path}, std::ios::out | std::ios::app);
+    return file.is_open();
 }
 
 using TimestampNow = std::string (*)();
