@@ -30,3 +30,7 @@ inline Vector2 normalize(Vector2 v) {
     }
     return scale(v, 1.0f / len);
 }
+
+inline bool almostEqual(Vector2 a, Vector2 b, float epsilon = 0.0001f) {
+    return std::fabs(a.x - b.x) <= epsilon && std::fabs(a.y - b.y) <= epsilon;
+}

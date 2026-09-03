@@ -64,3 +64,20 @@ TEST_CASE("Vector2 normalize of zero is zero") {
     REQUIRE(unit.x == Catch::Approx(0.0f));
     REQUIRE(unit.y == Catch::Approx(0.0f));
 }
+
+TEST_CASE("Vector2 almostEqual is true for identical vectors") {
+    REQUIRE(almostEqual(Vector2{1.0f, -2.0f}, Vector2{1.0f, -2.0f}));
+}
+
+TEST_CASE("Vector2 almostEqual is true within default epsilon") {
+    REQUIRE(almostEqual(Vector2{1.0f, 1.0f}, Vector2{1.00005f, 0.99995f}));
+}
+
+TEST_CASE("Vector2 almostEqual is false when far apart") {
+    REQUIRE_FALSE(almostEqual(Vector2{1.0f, 1.0f}, Vector2{2.0f, 1.0f}));
+}
+
+TEST_CASE("Vector2 almostEqual uses the given epsilon") {
+    REQUIRE(almostEqual(Vector2{0.0f, 0.0f}, Vector2{0.5f, 0.0f}, 0.6f));
+    REQUIRE_FALSE(almostEqual(Vector2{0.0f, 0.0f}, Vector2{0.5f, 0.0f}, 0.4f));
+}
