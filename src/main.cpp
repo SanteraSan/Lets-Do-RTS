@@ -1,6 +1,7 @@
 #include "core/FixedTimestep.hpp"
 #include "core/Logger.hpp"
-#include "math/MoveTowards.hpp"
+#include "ecs/World.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "platform/Camera.hpp"
 #include "platform/DebugDraw.hpp"
 #include "platform/Window.hpp"
@@ -31,15 +32,22 @@ int main() {
     }
     logger.log(LogLevel::Info, "window open");
 
+    World world;
+    const Entity scout = create(world);
+    transform(world, scout)->position = Vector2{0.0f, 0.0f};
+    mover(world, scout)->target = Vector2{60.0f, 0.0f};
+    mover(world, scout)->speed = 10.0f;
+    mover(world, scout)->radius = 2.0f;
+
+    const Entity tanker = create(world);
+    transform(world, tanker)->position = Vector2{0.0f, 12.0f};
+    mover(world, tanker)->target = Vector2{40.0f, 12.0f};
+    mover(world, tanker)->speed = 6.0f;
+    mover(world, tanker)->radius = 3.5f;
+
     FixedTimestep step;
     Uint32 lastTicks = SDL_GetTicks();
-    Vector2 position{0.0f, 0.0f};
-    const Vector2 target{60.0f, 0.0f};
-    const float speed = 10.0f;
-    const float radius = 2.0f;
     const Camera camera{};
-    Vector2 facing{1.0f, 0.0f};
-    bool arrived = false;
 
     while (window.isOpen()) {
         window.pollEvents();
@@ -53,24 +61,21 @@ int main() {
         addFrameTime(step, cappedFrameSeconds(rawSeconds));
 
         while (consumeStep(step)) {
-            const Vector2 previous = position;
-            moveTowards(position, target, speed, step.delta);
-            const Vector2 delta = sub(position, previous);
-            if (length(delta) > 0.0f) {
-                facing = normalize(delta);
-            }
-            if (!arrived && almostEqual(position, target)) {
-                logger.log(LogLevel::Info, "unit arrived");
-                arrived = true;
-            }
+            moveSystem(world, step.delta);
         }
 
         if (window.beginFrame()) {
-            SDL_SetRenderDrawColor(window.renderer, 220, 220, 80, 255);
-            const ScreenPoint screen = worldToScreen(position, camera);
-            const int radiusPixels = worldLengthToPixels(radius, camera);
-            drawCircle(window.renderer, screen, radiusPixels);
-            drawFacingArrow(window.renderer, screen, facing, radiusPixels);
+            for (std::size_t i = 0; i < world.entities.size(); ++i) {
+                if (i == 0) {
+                    SDL_SetRenderDrawColor(window.renderer, 220, 220, 80, 255);
+                } else {
+                    SDL_SetRenderDrawColor(window.renderer, 80, 200, 220, 255);
+                }
+                const ScreenPoint screen = worldToScreen(world.transforms[i].position, camera);
+                const int radiusPixels = worldLengthToPixels(world.movers[i].radius, camera);
+                drawCircle(window.renderer, screen, radiusPixels);
+                drawFacingArrow(window.renderer, screen, world.movers[i].facing, radiusPixels);
+            }
             window.endFrame();
         }
 

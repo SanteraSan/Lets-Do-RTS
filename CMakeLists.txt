@@ -32,6 +32,7 @@ add_executable(rts_tests
     tests/core/FixedTimestepTests.cpp
     tests/platform/WindowTests.cpp
     tests/platform/CameraTests.cpp
+    tests/ecs/WorldTests.cpp
 )
 target_link_libraries(rts_tests PRIVATE rts_math rts_platform Catch2::Catch2WithMain)
 
