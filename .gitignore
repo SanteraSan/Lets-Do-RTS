@@ -1,0 +1,10 @@
+out/
+build/
+cmake-build-*/
+vcpkg_installed/
+CMakeUserPresets.json
+.cache/
+compile_commands.json
+*.user
+.vscode/
+.idea/
