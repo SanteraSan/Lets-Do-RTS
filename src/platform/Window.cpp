@@ -14,10 +14,21 @@ bool Window::open(WindowDesc desc) {
         SDL_Quit();
         return false;
     }
+    renderer = SDL_CreateRenderer(handle, -1, SDL_RENDERER_ACCELERATED);
+    if (renderer == nullptr) {
+        SDL_DestroyWindow(handle);
+        handle = nullptr;
+        SDL_Quit();
+        return false;
+    }
     return true;
 }
 
 void Window::close() {
+    if (renderer != nullptr) {
+        SDL_DestroyRenderer(renderer);
+        renderer = nullptr;
+    }
     if (handle == nullptr) {
         return;
     }
@@ -32,5 +43,20 @@ void Window::pollEvents() {
         if (event.type == SDL_QUIT) {
             close();
         }
+    }
+}
+
+bool Window::beginFrame() {
+    if (renderer == nullptr) {
+        return false;
+    }
+    SDL_SetRenderDrawColor(renderer, 20, 24, 32, 255);
+    SDL_RenderClear(renderer);
+    return true;
+}
+
+void Window::endFrame() {
+    if (renderer != nullptr) {
+        SDL_RenderPresent(renderer);
     }
 }

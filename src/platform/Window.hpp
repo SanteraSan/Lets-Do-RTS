@@ -14,6 +14,7 @@ inline bool isValidWindowDesc(WindowDesc desc) {
 
 struct Window {
     SDL_Window* handle = nullptr;
+    SDL_Renderer* renderer = nullptr;
 
     Window() = default;
     Window(const Window&) = delete;
@@ -28,6 +29,8 @@ struct Window {
     bool open(WindowDesc desc);
     void close();
     void pollEvents();
+    bool beginFrame();
+    void endFrame();
 
     bool isOpen() const {
         return handle != nullptr;
