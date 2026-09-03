@@ -15,6 +15,18 @@ TEST_CASE("Vector2 add sums components") {
     REQUIRE(sum.y == Catch::Approx(1.0f));
 }
 
+TEST_CASE("Vector2 sub subtracts components") {
+    const Vector2 delta = sub(Vector2{1.5f, -2.0f}, Vector2{0.5f, 3.0f});
+    REQUIRE(delta.x == Catch::Approx(1.0f));
+    REQUIRE(delta.y == Catch::Approx(-5.0f));
+}
+
+TEST_CASE("Vector2 sub of a vector with itself is zero") {
+    const Vector2 delta = sub(Vector2{4.0f, -1.0f}, Vector2{4.0f, -1.0f});
+    REQUIRE(delta.x == Catch::Approx(0.0f));
+    REQUIRE(delta.y == Catch::Approx(0.0f));
+}
+
 TEST_CASE("Vector2 length of (3,4) is 5") {
     REQUIRE(length(Vector2{3.0f, 4.0f}) == Catch::Approx(5.0f));
 }
