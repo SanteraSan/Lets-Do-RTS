@@ -1,3 +1,4 @@
+#include "core/FixedTimestep.hpp"
 #include "core/Logger.hpp"
 #include "platform/Window.hpp"
 
@@ -27,8 +28,24 @@ int main() {
     }
     logger.log(LogLevel::Info, "window open");
 
+    FixedTimestep step;
+    Uint32 lastTicks = SDL_GetTicks();
+
     while (window.isOpen()) {
         window.pollEvents();
+        if (!window.isOpen()) {
+            break;
+        }
+
+        const Uint32 now = SDL_GetTicks();
+        const float rawSeconds = static_cast<float>(now - lastTicks) / 1000.0f;
+        lastTicks = now;
+        addFrameTime(step, cappedFrameSeconds(rawSeconds));
+
+        while (consumeStep(step)) {
+        }
+
+        SDL_Delay(1);
     }
 
     logger.log(LogLevel::Info, "engine stop");

@@ -39,3 +39,16 @@ TEST_CASE("consumeStep is false when delta is not positive") {
     step.accumulator = 1.0f;
     REQUIRE_FALSE(consumeStep(step));
 }
+
+TEST_CASE("cappedFrameSeconds keeps a normal frame") {
+    REQUIRE(cappedFrameSeconds(0.016f) == Catch::Approx(0.016f));
+}
+
+TEST_CASE("cappedFrameSeconds clamps a hitch") {
+    REQUIRE(cappedFrameSeconds(2.0f) == Catch::Approx(0.25f));
+}
+
+TEST_CASE("cappedFrameSeconds drops non-positive time") {
+    REQUIRE(cappedFrameSeconds(0.0f) == 0.0f);
+    REQUIRE(cappedFrameSeconds(-0.1f) == 0.0f);
+}

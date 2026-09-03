@@ -21,3 +21,13 @@ inline bool consumeStep(FixedTimestep& step) {
     step.accumulator -= step.delta;
     return true;
 }
+
+inline float cappedFrameSeconds(float frameSeconds, float maxSeconds = 0.25f) {
+    if (frameSeconds <= 0.0f || maxSeconds <= 0.0f) {
+        return 0.0f;
+    }
+    if (frameSeconds > maxSeconds) {
+        return maxSeconds;
+    }
+    return frameSeconds;
+}
