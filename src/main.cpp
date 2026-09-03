@@ -1,5 +1,6 @@
 #include "core/FixedTimestep.hpp"
 #include "core/Logger.hpp"
+#include "math/MoveTowards.hpp"
 #include "platform/Window.hpp"
 
 #include <iostream>
@@ -30,6 +31,10 @@ int main() {
 
     FixedTimestep step;
     Uint32 lastTicks = SDL_GetTicks();
+    Vector2 position{0.0f, 0.0f};
+    const Vector2 target{60.0f, 0.0f};
+    const float speed = 10.0f;
+    bool arrived = false;
 
     while (window.isOpen()) {
         window.pollEvents();
@@ -43,6 +48,11 @@ int main() {
         addFrameTime(step, cappedFrameSeconds(rawSeconds));
 
         while (consumeStep(step)) {
+            moveTowards(position, target, speed, step.delta);
+            if (!arrived && almostEqual(position, target)) {
+                logger.log(LogLevel::Info, "unit arrived");
+                arrived = true;
+            }
         }
 
         SDL_Delay(1);

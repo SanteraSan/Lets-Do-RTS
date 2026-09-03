@@ -24,6 +24,7 @@ find_package(Catch2 3 CONFIG REQUIRED)
 
 add_executable(rts_tests
     tests/math/Vector2Tests.cpp
+    tests/math/MoveTowardsTests.cpp
     tests/core/LoggerTests.cpp
     tests/core/FixedTimestepTests.cpp
     tests/platform/WindowTests.cpp
