@@ -48,3 +48,19 @@ TEST_CASE("Vector2 scale by negative flips direction") {
     REQUIRE(scaled.x == Catch::Approx(-3.0f));
     REQUIRE(scaled.y == Catch::Approx(2.0f));
 }
+
+TEST_CASE("Vector2 normalize of (3,4) is (0.6, 0.8)") {
+    const Vector2 unit = normalize(Vector2{3.0f, 4.0f});
+    REQUIRE(unit.x == Catch::Approx(0.6f));
+    REQUIRE(unit.y == Catch::Approx(0.8f));
+}
+
+TEST_CASE("Vector2 normalize has length 1") {
+    REQUIRE(length(normalize(Vector2{3.0f, 4.0f})) == Catch::Approx(1.0f));
+}
+
+TEST_CASE("Vector2 normalize of zero is zero") {
+    const Vector2 unit = normalize(Vector2{});
+    REQUIRE(unit.x == Catch::Approx(0.0f));
+    REQUIRE(unit.y == Catch::Approx(0.0f));
+}

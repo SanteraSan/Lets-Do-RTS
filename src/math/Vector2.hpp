@@ -22,3 +22,11 @@ inline Vector2 scale(Vector2 v, float s) {
 inline float length(Vector2 v) {
     return std::sqrt(v.x * v.x + v.y * v.y);
 }
+
+inline Vector2 normalize(Vector2 v) {
+    const float len = length(v);
+    if (len == 0.0f) {
+        return Vector2{};
+    }
+    return scale(v, 1.0f / len);
+}
