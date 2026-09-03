@@ -1,5 +1,7 @@
 #pragma once
 
+#include "platform/Input.hpp"
+
 #include <SDL.h>
 
 struct WindowDesc {
@@ -28,7 +30,7 @@ struct Window {
 
     bool open(WindowDesc desc);
     void close();
-    void pollEvents();
+    void pollEvents(InputFrame& input);
     bool beginFrame();
     void endFrame();
 

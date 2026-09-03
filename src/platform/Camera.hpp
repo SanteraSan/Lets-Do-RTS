@@ -29,3 +29,12 @@ inline int worldLengthToPixels(float worldLength, Camera camera) {
     const int pixels = static_cast<int>(worldLength * camera.pixelsPerUnit);
     return pixels < 1 ? 1 : pixels;
 }
+
+inline Vector2 screenToWorld(ScreenPoint screen, Camera camera) {
+    if (camera.pixelsPerUnit <= 0.0f) {
+        return Vector2{};
+    }
+    return Vector2{
+        camera.origin.x + (static_cast<float>(screen.x) - camera.offsetX) / camera.pixelsPerUnit,
+        camera.origin.y + (static_cast<float>(screen.y) - camera.offsetY) / camera.pixelsPerUnit};
+}

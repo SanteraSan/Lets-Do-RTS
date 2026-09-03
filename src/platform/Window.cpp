@@ -37,12 +37,37 @@ void Window::close() {
     SDL_Quit();
 }
 
-void Window::pollEvents() {
+void Window::pollEvents(InputFrame& input) {
+    input.leftClick = false;
+    input.rightClick = false;
+    input.keyWalk = false;
+    input.keyRun = false;
+
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
         if (event.type == SDL_QUIT) {
             close();
+        } else if (event.type == SDL_MOUSEBUTTONDOWN) {
+            if (event.button.button == SDL_BUTTON_LEFT) {
+                input.leftClick = true;
+            } else if (event.button.button == SDL_BUTTON_RIGHT) {
+                input.rightClick = true;
+            }
+        } else if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
+            if (event.key.keysym.sym == SDLK_1) {
+                input.keyWalk = true;
+            } else if (event.key.keysym.sym == SDLK_2) {
+                input.keyRun = true;
+            }
         }
+    }
+
+    if (handle != nullptr) {
+        int mouseX = 0;
+        int mouseY = 0;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        input.mouse.x = mouseX;
+        input.mouse.y = mouseY;
     }
 }
 

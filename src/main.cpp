@@ -2,6 +2,7 @@
 #include "core/Logger.hpp"
 #include "ecs/World.hpp"
 #include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/Selection.hpp"
 #include "platform/Camera.hpp"
 #include "platform/DebugDraw.hpp"
 #include "platform/Window.hpp"
@@ -35,25 +36,29 @@ int main() {
     World world;
     const Entity scout = create(world);
     transform(world, scout)->position = Vector2{0.0f, 0.0f};
-    mover(world, scout)->target = Vector2{60.0f, 0.0f};
+    mover(world, scout)->target = Vector2{0.0f, 0.0f};
     mover(world, scout)->speed = 10.0f;
     mover(world, scout)->radius = 2.0f;
 
     const Entity tanker = create(world);
     transform(world, tanker)->position = Vector2{0.0f, 12.0f};
-    mover(world, tanker)->target = Vector2{40.0f, 12.0f};
+    mover(world, tanker)->target = Vector2{0.0f, 12.0f};
     mover(world, tanker)->speed = 6.0f;
     mover(world, tanker)->radius = 3.5f;
 
+    Selection selection;
+    InputFrame input;
     FixedTimestep step;
     Uint32 lastTicks = SDL_GetTicks();
     const Camera camera{};
 
     while (window.isOpen()) {
-        window.pollEvents();
+        window.pollEvents(input);
         if (!window.isOpen()) {
             break;
         }
+
+        applyInput(world, selection, input, camera);
 
         const Uint32 now = SDL_GetTicks();
         const float rawSeconds = static_cast<float>(now - lastTicks) / 1000.0f;
@@ -75,6 +80,11 @@ int main() {
                 const int radiusPixels = worldLengthToPixels(world.movers[i].radius, camera);
                 drawCircle(window.renderer, screen, radiusPixels);
                 drawFacingArrow(window.renderer, screen, world.movers[i].facing, radiusPixels);
+
+                if (world.entities[i] == selection.entity) {
+                    SDL_SetRenderDrawColor(window.renderer, 255, 255, 255, 255);
+                    drawCircle(window.renderer, screen, radiusPixels + 3);
+                }
             }
             window.endFrame();
         }
