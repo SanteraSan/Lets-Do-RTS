@@ -32,6 +32,7 @@ add_executable(rts_tests
     tests/core/FixedTimestepTests.cpp
     tests/platform/WindowTests.cpp
     tests/platform/CameraTests.cpp
+    tests/platform/BindingTests.cpp
     tests/ecs/WorldTests.cpp
     tests/ecs/SelectionTests.cpp
 )

@@ -1,3 +1,4 @@
+#include "platform/Binding.hpp"
 #include "platform/Window.hpp"
 
 bool Window::open(WindowDesc desc) {
@@ -48,16 +49,16 @@ void Window::pollEvents(InputFrame& input) {
         if (event.type == SDL_QUIT) {
             close();
         } else if (event.type == SDL_MOUSEBUTTONDOWN) {
-            if (event.button.button == SDL_BUTTON_LEFT) {
-                input.leftClick = true;
-            } else if (event.button.button == SDL_BUTTON_RIGHT) {
-                input.rightClick = true;
+            InputAction action = InputAction::Select;
+            if (findAction(
+                    kDefaultBindings, kDefaultBindingCount, true, event.button.button, action)) {
+                raiseAction(input, action);
             }
         } else if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
-            if (event.key.keysym.sym == SDLK_1) {
-                input.keyWalk = true;
-            } else if (event.key.keysym.sym == SDLK_2) {
-                input.keyRun = true;
+            InputAction action = InputAction::Select;
+            if (findAction(
+                    kDefaultBindings, kDefaultBindingCount, false, event.key.keysym.sym, action)) {
+                raiseAction(input, action);
             }
         }
     }
