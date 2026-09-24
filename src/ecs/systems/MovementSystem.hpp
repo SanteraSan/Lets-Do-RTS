@@ -143,7 +143,16 @@ inline Vector2 rampCenterFirst(
         return target;
     }
     const Vector2 center = cellCenter(grid, fromX, fromY);
-    if (distance(center, target) + 0.001f < distance(position, target)) {
+    const Vector2 toExit = sub(target, center);
+    const float exitLen2 = toExit.x * toExit.x + toExit.y * toExit.y;
+    if (exitLen2 <= 0.0001f) {
+        return target;
+    }
+    const Vector2 toUnit = sub(position, center);
+    const float along = (toUnit.x * toExit.x + toUnit.y * toExit.y) / exitLen2;
+    const float cross = toUnit.x * toExit.y - toUnit.y * toExit.x;
+    const float tolerance = grid.cellSize * 0.05f;
+    if (along < 0.0f || cross * cross > tolerance * tolerance * exitLen2) {
         return center;
     }
     return target;
