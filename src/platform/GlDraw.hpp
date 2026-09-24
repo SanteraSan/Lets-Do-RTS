@@ -12,6 +12,16 @@ struct GlVertex {
     float blue = 0.0f;
 };
 
+struct GlSpriteVertex {
+    float x = 0.0f;
+    float y = 0.0f;
+    float u = 0.0f;
+    float v = 0.0f;
+    float red = 0.0f;
+    float green = 0.0f;
+    float blue = 0.0f;
+};
+
 struct GlDraw {
     bool ready = false;
     int width = 1;
@@ -19,13 +29,19 @@ struct GlDraw {
     unsigned vao = 0;
     unsigned vbo = 0;
     unsigned program = 0;
+    unsigned spriteProgram = 0;
+    unsigned spriteVao = 0;
+    unsigned spriteVbo = 0;
+    unsigned texture = 0;
     std::vector<GlVertex> triangles;
     std::vector<GlVertex> lines;
+    std::vector<GlSpriteVertex> sprites;
 
     bool init();
     void shutdown();
     void clear(float red, float green, float blue);
     void triangle(ScreenPoint a, ScreenPoint b, ScreenPoint c, int red, int green, int blue);
     void line(ScreenPoint a, ScreenPoint b, int red, int green, int blue);
+    void sprite(ScreenPoint feet, int pixelWidth, int pixelHeight, int red, int green, int blue);
     void flush();
 };

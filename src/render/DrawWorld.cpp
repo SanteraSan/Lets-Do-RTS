@@ -46,7 +46,9 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
         const Rgb color = unitColor(world.transforms[i].layer);
         const ScreenPoint screen = worldToScreen(world.transforms[i].position, camera);
         const int radiusPixels = worldLengthToPixels(world.movers[i].radius, camera);
-        drawCircle(draw, screen, radiusPixels, color.red, color.green, color.blue);
+        const int spriteHeight = radiusPixels * 3;
+        const int spriteWidth = radiusPixels * 2;
+        draw.sprite(screen, spriteWidth, spriteHeight, color.red, color.green, color.blue);
         const Vector2 facing = length(world.movers[i].facing) == 0.0f ? Vector2{1.0f, 0.0f}
                                                                        : normalize(world.movers[i].facing);
         const Vector2 tipWorld =
