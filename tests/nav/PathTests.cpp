@@ -56,3 +56,23 @@ TEST_CASE("findPath lets ground cross a cliff by the ramp") {
     REQUIRE(path.back().x == 6);
     REQUIRE(path.back().y == 1);
 }
+
+TEST_CASE("findPath crosses the plateau straight to the ramp") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 8, 3));
+    for (int row = 0; row < grid.height; ++row) {
+        REQUIRE(setHeight(grid, 3, row, 2));
+        REQUIRE(setPlateau(grid, 4, row, 1));
+    }
+    REQUIRE(setRamp(grid, 3, 1, 1));
+    REQUIRE(setRamp(grid, 5, 1, 0));
+    const std::vector<PathCell> path = findPath(grid, NavLayer::Ground, 0, 0, 7, 0);
+    bool crossed = false;
+    for (const PathCell& cell : path) {
+        if (cell.x == 4) {
+            REQUIRE(cell.y == 1);
+            crossed = true;
+        }
+    }
+    REQUIRE(crossed);
+}

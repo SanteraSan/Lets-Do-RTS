@@ -2,6 +2,7 @@
 
 #include "nav/Approach.hpp"
 
+#include <cmath>
 #include <limits>
 #include <queue>
 #include <vector>
@@ -11,10 +12,19 @@ struct PathCell {
     int y = 0;
 };
 
-inline int pathHeuristic(int x, int y, int goalX, int goalY) {
+inline float pathHeuristic(int x, int y, int goalX, int goalY) {
     const int dx = x > goalX ? x - goalX : goalX - x;
     const int dy = y > goalY ? y - goalY : goalY - y;
-    return dx > dy ? dx : dy;
+    const int diagonal = dx < dy ? dx : dy;
+    const int straight = (dx > dy ? dx : dy) - diagonal;
+    return static_cast<float>(straight) + static_cast<float>(diagonal) * 1.41421356f;
+}
+
+inline float pathStepCost(int fromX, int fromY, int toX, int toY) {
+    if (fromX != toX && fromY != toY) {
+        return 1.41421356f;
+    }
+    return 1.0f;
 }
 
 inline std::vector<PathCell> findPath(const Grid& grid, NavLayer layer, int startX, int startY, int goalX, int goalY) {
@@ -48,11 +58,11 @@ inline std::vector<PathCell> findPath(const Grid& grid, NavLayer layer, int star
     std::priority_queue<Node, std::vector<Node>, Farther> open;
     const int startIndex = indexOf(startX, startY);
     cost[static_cast<std::size_t>(startIndex)] = 0.0f;
-    open.push(Node{startX, startY, static_cast<float>(pathHeuristic(startX, startY, goalX, goalY))});
+    open.push(Node{startX, startY, pathHeuristic(startX, startY, goalX, goalY)});
 
     int bestX = startX;
     int bestY = startY;
-    int bestHeuristic = pathHeuristic(startX, startY, goalX, goalY);
+    float bestHeuristic = pathHeuristic(startX, startY, goalX, goalY);
     int bestOffset = startY > goalY ? startY - goalY : goalY - startY;
     const int offsets[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
@@ -64,7 +74,7 @@ inline std::vector<PathCell> findPath(const Grid& grid, NavLayer layer, int star
             continue;
         }
         closed[static_cast<std::size_t>(currentIndex)] = 1;
-        const int currentHeuristic = pathHeuristic(current.x, current.y, goalX, goalY);
+        const float currentHeuristic = pathHeuristic(current.x, current.y, goalX, goalY);
         const int currentOffset = current.y > goalY ? current.y - goalY : goalY - current.y;
         if (currentHeuristic < bestHeuristic ||
             (currentHeuristic == bestHeuristic && currentOffset < bestOffset)) {
@@ -88,13 +98,14 @@ inline std::vector<PathCell> findPath(const Grid& grid, NavLayer layer, int star
             if (closed[static_cast<std::size_t>(nextIndex)] != 0) {
                 continue;
             }
-            const float nextCost = cost[static_cast<std::size_t>(currentIndex)] + 1.0f;
+            const float nextCost =
+                cost[static_cast<std::size_t>(currentIndex)] + pathStepCost(current.x, current.y, nextX, nextY);
             if (nextCost >= cost[static_cast<std::size_t>(nextIndex)]) {
                 continue;
             }
             cost[static_cast<std::size_t>(nextIndex)] = nextCost;
             parent[static_cast<std::size_t>(nextIndex)] = currentIndex;
-            const float rank = nextCost + static_cast<float>(pathHeuristic(nextX, nextY, goalX, goalY));
+            const float rank = nextCost + pathHeuristic(nextX, nextY, goalX, goalY);
             open.push(Node{nextX, nextY, rank});
         }
     }
