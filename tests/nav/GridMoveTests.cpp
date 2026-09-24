@@ -147,6 +147,40 @@ TEST_CASE("moveOnGrid enters an open diagonal cell without reversing") {
     REQUIRE(cellY == 1);
 }
 
+TEST_CASE("moveOnGrid keeps one direction until it can leave the ramp cell") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 3, 3));
+    REQUIRE(setHeight(grid, 0, 0, 2));
+    REQUIRE(setHeight(grid, 0, 2, 2));
+    Vector2 position{0.15f, 1.8f};
+    const std::vector<PathCell> taken{PathCell{1, 1}};
+    Vector2 previousDelta{};
+    bool hasDelta = false;
+    int turns = 0;
+    for (int i = 0; i < 40; ++i) {
+        const Vector2 before = position;
+        moveOnGrid(position, cellCenter(grid, 1, 0), NavLayer::Ground, grid, 3.0f, 0.1f, &taken);
+        const Vector2 delta = sub(position, before);
+        if (length(delta) <= 0.001f) {
+            continue;
+        }
+        if (hasDelta) {
+            const float alignment = delta.x * previousDelta.x + delta.y * previousDelta.y;
+            if (alignment <= 0.0f) {
+                turns += 1;
+            }
+        }
+        previousDelta = delta;
+        hasDelta = true;
+    }
+    REQUIRE(turns <= 1);
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, position, cellX, cellY));
+    REQUIRE(cellX == 1);
+    REQUIRE(cellY == 0);
+}
+
 TEST_CASE("moveOnGrid approaches a blocked corner without stepping back") {
     Grid grid;
     REQUIRE(makeGrid(grid, 3, 3));

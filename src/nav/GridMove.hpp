@@ -52,13 +52,6 @@ inline void moveOnGrid(
     auto openCell = [&](int cellX, int cellY) {
         return canStepCell(grid, layer, fromX, fromY, cellX, cellY) && !cellTaken(taken, cellX, cellY);
     };
-    int towardX = fromX;
-    int towardY = fromY;
-    const bool towardKnown = worldToCell(grid, target, towardX, towardY);
-    const int towardSpanX = towardX > fromX ? towardX - fromX : fromX - towardX;
-    const int towardSpanY = towardY > fromY ? towardY - fromY : fromY - towardY;
-    const bool towardOpen = towardKnown && (towardSpanX <= 1 && towardSpanY <= 1) &&
-        !(towardX == fromX && towardY == fromY) && openCell(towardX, towardY);
 
     if (nextX == fromX && nextY == fromY) {
         position = next;
@@ -86,10 +79,10 @@ inline void moveOnGrid(
         };
         const bool xOpen = staysOpen(alongX);
         const bool yOpen = staysOpen(alongY);
-        if (xOpen && yOpen) {
-            const float gapX = target.x > position.x ? target.x - position.x : position.x - target.x;
-            const float gapY = target.y > position.y ? target.y - position.y : position.y - target.y;
-            position = gapY > gapX ? alongY : alongX;
+        Vector2 clamped = next;
+        clampInsideCell(grid, fromX, fromY, clamped);
+        if (distance(clamped, target) + 0.0001f < distance(position, target)) {
+            position = clamped;
             return;
         }
         if (xOpen) {
