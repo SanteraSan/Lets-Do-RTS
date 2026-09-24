@@ -162,6 +162,64 @@ TEST_CASE("a ramp passage works up and down, and a sealed ramp gives up") {
     REQUIRE(cellX == 1);
 }
 
+TEST_CASE("a ramp exit waits at the cell center before the diagonal") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 4, 3));
+    for (int y = 0; y < grid.height; ++y) {
+        REQUIRE(setHeight(grid, 1, y, 2));
+    }
+    REQUIRE(setRamp(grid, 1, 1, 1));
+    REQUIRE(setPlateau(grid, 2, 0, 1));
+    REQUIRE(setPlateau(grid, 2, 1, 1));
+    REQUIRE(setPlateau(grid, 2, 2, 1));
+
+    World world;
+    const Entity walker = create(world);
+    const Entity blocker = create(world);
+    transform(world, walker)->position = Vector2{1.05f, 1.8f};
+    mover(world, walker)->order = cellCenter(grid, 2, 0);
+    mover(world, walker)->ordered = true;
+    mover(world, walker)->speed = 4.0f;
+    mover(world, walker)->radius = 0.2f;
+    transform(world, blocker)->position = cellCenter(grid, 2, 1);
+
+    const Vector2 center = cellCenter(grid, 1, 1);
+    Vector2 previousDelta{};
+    bool hasDelta = false;
+    int turns = 0;
+    bool crossedCenter = false;
+    for (int i = 0; i < 80; ++i) {
+        const Vector2 before = transform(world, walker)->position;
+        moveSystem(world, grid, 0.05f);
+        const Vector2 delta = sub(transform(world, walker)->position, before);
+        if (!crossedCenter && length(delta) > 0.001f) {
+            const Vector2 towardCenter = sub(center, before);
+            const float toward = delta.x * towardCenter.x + delta.y * towardCenter.y;
+            REQUIRE(toward > 0.0f);
+        }
+        if (length(delta) > 0.001f) {
+            if (hasDelta) {
+                const float alignment = delta.x * previousDelta.x + delta.y * previousDelta.y;
+                if (alignment <= 0.0f) {
+                    turns += 1;
+                }
+            }
+            previousDelta = delta;
+            hasDelta = true;
+        }
+        if (distance(transform(world, walker)->position, center) <= grid.cellSize * 0.05f) {
+            crossedCenter = true;
+        }
+    }
+    REQUIRE(crossedCenter);
+    REQUIRE(turns <= 1);
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, transform(world, walker)->position, cellX, cellY));
+    REQUIRE(cellX == 2);
+    REQUIRE(cellY == 0);
+}
+
 TEST_CASE("an equal passage keeps the side already chosen") {
     Grid grid;
     REQUIRE(makeGrid(grid, 5, 3));

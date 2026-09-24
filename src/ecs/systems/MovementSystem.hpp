@@ -120,6 +120,35 @@ inline bool orderStopsShort(
     return path.back().x != goalX || path.back().y != goalY;
 }
 
+inline Vector2 rampCenterFirst(
+    Vector2 position,
+    Vector2 target,
+    const Grid& grid,
+    const std::vector<PathCell>& taken) {
+    int fromX = 0;
+    int fromY = 0;
+    int toX = 0;
+    int toY = 0;
+    if (!worldToCell(grid, position, fromX, fromY) || !worldToCell(grid, target, toX, toY)) {
+        return target;
+    }
+    const Tile* here = tileAt(grid, fromX, fromY);
+    const int stepX = toX - fromX;
+    const int stepY = toY - fromY;
+    if (here == nullptr || !here->ramp || stepX == 0 || stepY == 0 || stepX > 1 || stepX < -1 || stepY > 1 ||
+        stepY < -1) {
+        return target;
+    }
+    if (!cellTaken(&taken, fromX + stepX, fromY) && !cellTaken(&taken, fromX, fromY + stepY)) {
+        return target;
+    }
+    const Vector2 center = cellCenter(grid, fromX, fromY);
+    if (distance(center, target) + 0.001f < distance(position, target)) {
+        return center;
+    }
+    return target;
+}
+
 inline void moveSystem(World& world, const Grid& grid, float dt) {
     for (std::size_t i = 0; i < world.entities.size(); ++i) {
         Transform& t = world.transforms[i];
@@ -135,7 +164,8 @@ inline void moveSystem(World& world, const Grid& grid, float dt) {
             m.waypoints.erase(m.waypoints.begin());
         }
         const Vector2 previous = t.position;
-        moveOnGrid(t.position, m.target, t.layer, grid, m.speed, dt, &taken);
+        const Vector2 stepTarget = rampCenterFirst(t.position, m.target, grid, taken);
+        moveOnGrid(t.position, stepTarget, t.layer, grid, m.speed, dt, &taken);
         const Vector2 delta = sub(t.position, previous);
         bool noStep = false;
         const bool closed = m.ordered && orderStopsShort(grid, t.layer, t.position, m.order, taken, &noStep);
