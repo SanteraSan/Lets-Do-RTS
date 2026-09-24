@@ -50,6 +50,26 @@ inline void moveOnGrid(
         return;
     }
     if (nextX == fromX && nextY == fromY) {
+        int towardX = fromX;
+        int towardY = fromY;
+        if (worldToCell(grid, target, towardX, towardY) && towardX != fromX && towardY != fromY) {
+            const bool flankXBlocked =
+                cellTaken(taken, towardX, fromY) || !canStepCell(grid, layer, fromX, fromY, towardX, fromY);
+            const bool flankYBlocked =
+                cellTaken(taken, fromX, towardY) || !canStepCell(grid, layer, fromX, fromY, fromX, towardY);
+            if (flankXBlocked || flankYBlocked) {
+                const float gapX = target.x > position.x ? target.x - position.x : position.x - target.x;
+                const float gapY = target.y > position.y ? target.y - position.y : position.y - target.y;
+                Vector2 slide = position;
+                if (!flankYBlocked && (gapY >= gapX || flankXBlocked)) {
+                    slide.y = next.y;
+                } else if (!flankXBlocked) {
+                    slide.x = next.x;
+                }
+                position = slide;
+                return;
+            }
+        }
         position = next;
         return;
     }
@@ -60,6 +80,30 @@ inline void moveOnGrid(
         if (canStepCell(grid, layer, fromX, fromY, nextX, nextY) && !cellTaken(taken, nextX, nextY)) {
             position = next;
             return;
+        }
+        const float gapX = target.x > position.x ? target.x - position.x : position.x - target.x;
+        const float gapY = target.y > position.y ? target.y - position.y : position.y - target.y;
+        const int firstAxis = gapY >= gapX ? 1 : 0;
+        for (int attempt = 0; attempt < 2; ++attempt) {
+            const int axis = attempt == 0 ? firstAxis : 1 - firstAxis;
+            Vector2 slide = position;
+            if (axis == 0) {
+                slide.x = next.x;
+            } else {
+                slide.y = next.y;
+            }
+            int slideX = fromX;
+            int slideY = fromY;
+            if (!worldToCell(grid, slide, slideX, slideY)) {
+                clampInsideCell(grid, fromX, fromY, slide);
+                position = slide;
+                return;
+            }
+            if ((slideX == fromX && slideY == fromY) ||
+                (canStepCell(grid, layer, fromX, fromY, slideX, slideY) && !cellTaken(taken, slideX, slideY))) {
+                position = slide;
+                return;
+            }
         }
         clampInsideCell(grid, fromX, fromY, next);
         position = next;

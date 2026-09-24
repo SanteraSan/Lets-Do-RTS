@@ -6,8 +6,7 @@
 
 constexpr float kBlockedOrderSeconds = 1.0f;
 
-inline void steerToOrder(Mover& mover, NavLayer layer, Vector2 from, const Grid& grid, const std::vector<PathCell>& taken) {
-    const std::vector<Vector2> points = pathTargets(grid, layer, from, mover.order, mover.radius, &taken);
+inline void adoptRoute(Mover& mover, NavLayer layer, Vector2 from, const Grid& grid, const std::vector<Vector2>& points) {
     mover.waypoints.clear();
     if (points.empty()) {
         mover.target = approachTarget(grid, layer, from, mover.order, mover.radius);
@@ -15,6 +14,80 @@ inline void steerToOrder(Mover& mover, NavLayer layer, Vector2 from, const Grid&
     }
     mover.target = points.front();
     mover.waypoints.assign(points.begin() + 1, points.end());
+}
+
+inline float routeCost(const Grid& grid, Vector2 from, const std::vector<Vector2>& points) {
+    int x0 = 0;
+    int y0 = 0;
+    if (!worldToCell(grid, from, x0, y0)) {
+        return 1.0e9f;
+    }
+    float cost = 0.0f;
+    for (const Vector2& point : points) {
+        int x = 0;
+        int y = 0;
+        if (!worldToCell(grid, point, x, y)) {
+            return 1.0e9f;
+        }
+        cost += pathStepCost(x0, y0, x, y);
+        x0 = x;
+        y0 = y;
+    }
+    return cost;
+}
+
+inline bool routeOpen(const Grid& grid, NavLayer layer, Vector2 from, const std::vector<Vector2>& points, const std::vector<PathCell>& taken) {
+    int x0 = 0;
+    int y0 = 0;
+    if (!worldToCell(grid, from, x0, y0)) {
+        return false;
+    }
+    for (const Vector2& point : points) {
+        int x = 0;
+        int y = 0;
+        if (!worldToCell(grid, point, x, y)) {
+            return false;
+        }
+        const int dx = x > x0 ? x - x0 : x0 - x;
+        const int dy = y > y0 ? y - y0 : y0 - y;
+        if ((dx > 1 || dy > 1) ||
+            ((x != x0 || y != y0) && (!canStepCell(grid, layer, x0, y0, x, y) || cellTaken(&taken, x, y)))) {
+            return false;
+        }
+        x0 = x;
+        y0 = y;
+    }
+    return true;
+}
+
+inline void steerToOrder(
+    Mover& mover,
+    NavLayer layer,
+    Vector2 from,
+    const Grid& grid,
+    const std::vector<PathCell>& taken,
+    bool keepTiedRoute = false) {
+    const std::vector<Vector2> points = pathTargets(grid, layer, from, mover.order, mover.radius, &taken);
+    std::vector<Vector2> current;
+    current.push_back(mover.target);
+    current.insert(current.end(), mover.waypoints.begin(), mover.waypoints.end());
+    if (keepTiedRoute && routeOpen(grid, layer, from, current, taken)) {
+        int goalX = 0;
+        int goalY = 0;
+        int oldX = 0;
+        int oldY = 0;
+        int newX = 0;
+        int newY = 0;
+        const bool goalKnown = worldToCell(grid, mover.order, goalX, goalY);
+        const bool oldReaches = goalKnown && worldToCell(grid, current.back(), oldX, oldY) && oldX == goalX && oldY == goalY;
+        const bool newReaches = goalKnown && !points.empty() && worldToCell(grid, points.back(), newX, newY) && newX == goalX && newY == goalY;
+        const float newCost = points.empty() ? 1.0e9f : routeCost(grid, from, points);
+        const float oldCost = routeCost(grid, from, current);
+        if (oldReaches && newReaches && !(newCost + 0.5f < oldCost)) {
+            return;
+        }
+    }
+    adoptRoute(mover, layer, from, grid, points);
 }
 
 inline bool orderStopsShort(
@@ -54,7 +127,7 @@ inline void moveSystem(World& world, const Grid& grid, float dt) {
         std::vector<PathCell> taken;
         blockingCells(world, i, t.layer, grid, taken);
         if (m.ordered) {
-            steerToOrder(m, t.layer, t.position, grid, taken);
+            steerToOrder(m, t.layer, t.position, grid, taken, true);
         }
         if (!m.waypoints.empty() && grid.cellSize > 0.0f &&
             distance(t.position, m.target) <= grid.cellSize * 0.05f) {

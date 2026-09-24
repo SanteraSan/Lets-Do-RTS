@@ -116,6 +116,26 @@ TEST_CASE("moveOnGrid stops before a cell held by another unit") {
     REQUIRE(cellY == 0);
 }
 
+TEST_CASE("moveOnGrid slides along the open side of a blocked cell") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 3, 3));
+    Vector2 position = cellCenter(grid, 0, 1);
+    const std::vector<PathCell> taken{PathCell{1, 1}};
+    const float startY = position.y;
+    for (int i = 0; i < 3; ++i) {
+        const float beforeY = position.y;
+        moveOnGrid(position, cellCenter(grid, 1, 0), NavLayer::Ground, grid, 1.0f, 0.2f, &taken);
+        REQUIRE(position.y <= beforeY);
+    }
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, position, cellX, cellY));
+    REQUIRE(cellX == 0);
+    REQUIRE(cellY == 1);
+    REQUIRE(position.y < startY);
+    REQUIRE(position.x == Catch::Approx(cellCenter(grid, 0, 1).x));
+}
+
 TEST_CASE("moveOnGrid ignores a non-positive speed") {
     Grid grid;
     REQUIRE(makeGrid(grid, 4, 4));

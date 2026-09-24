@@ -107,6 +107,27 @@ TEST_CASE("an order steps around a unit and through the cell once it leaves") {
     REQUIRE(mover(world, walker)->target.y == Catch::Approx(cellCenter(grid, 1, 1).y));
 }
 
+TEST_CASE("an equal passage keeps the side already chosen") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 5, 3));
+    World world;
+    const Entity walker = create(world);
+    const Entity blocker = create(world);
+    transform(world, walker)->position = cellCenter(grid, 1, 1);
+    mover(world, walker)->order = cellCenter(grid, 4, 1);
+    mover(world, walker)->ordered = true;
+    mover(world, walker)->speed = 0.0f;
+    mover(world, walker)->radius = 0.2f;
+    transform(world, blocker)->position = cellCenter(grid, 2, 1);
+
+    moveSystem(world, grid, 1.0f);
+    const Vector2 chosen = mover(world, walker)->target;
+    transform(world, walker)->position.y += 0.2f;
+    moveSystem(world, grid, 1.0f);
+    REQUIRE(mover(world, walker)->target.x == Catch::Approx(chosen.x));
+    REQUIRE(mover(world, walker)->target.y == Catch::Approx(chosen.y));
+}
+
 TEST_CASE("a blocked order gives up after one second and stays put") {
     Grid grid;
     REQUIRE(makeGrid(grid, 5, 1));
