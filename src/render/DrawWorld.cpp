@@ -174,12 +174,19 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
         if (world.entities[i] == selection.entity) {
             const float side = world.movers[i].radius * 2.0f;
             const float ring = grid.cellSize > 0.0f ? grid.cellSize * 0.45f : world.movers[i].radius;
+            float ringHeight = markerLift;
             float mark = viewDepth(world.transforms[i].position, markerLift, camera);
-            if (world.transforms[i].layer != NavLayer::Air) {
+            if (world.transforms[i].layer == NavLayer::Air) {
+                const float edge = std::sqrt(1.0f + camera.yScale * camera.yScale);
+                if (camera.pixelsPerUnit > 0.0f && edge > 0.0f) {
+                    ringHeight = markerLift + 6.0f / (camera.pixelsPerUnit * edge);
+                }
+                mark = viewDepth(world.transforms[i].position, ringHeight, camera);
+            } else {
                 mark = viewDepth(world.transforms[i].position, feet + side, camera) +
                     layerDepthBias(world.transforms[i].layer) - 0.5f;
             }
-            drawPlanarMarker(draw, world.transforms[i].position, facing, ring, markerLift, mark, camera);
+            drawPlanarMarker(draw, world.transforms[i].position, facing, ring, ringHeight, mark, camera);
         }
     }
 }
