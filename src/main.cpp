@@ -41,13 +41,6 @@ int main() {
     mover(world, scout)->speed = 10.0f;
     mover(world, scout)->radius = 2.0f;
 
-    const Entity tanker = create(world);
-    transform(world, tanker)->position = Vector2{0.0f, 12.0f};
-    mover(world, tanker)->target = Vector2{0.0f, 12.0f};
-    mover(world, tanker)->speed = 6.0f;
-    mover(world, tanker)->radius = 3.5f;
-    transform(world, tanker)->layer = NavLayer::Air;
-
     Grid grid;
     makeGrid(grid, 40, 24);
     grid.origin = Vector2{-24.0f, -40.0f};
@@ -64,9 +57,12 @@ int main() {
     }
     setRamp(grid, 10, 10, 1);
     setRamp(grid, 14, 10, 0);
-    for (int x = 0; x < grid.width; ++x) {
-        if (x != 10) {
-            setHeight(grid, x, 18, -1);
+    for (int y = 16; y <= 21; ++y) {
+        for (int x = 0; x < grid.width; ++x) {
+            if (x == 10 || (x >= 11 && x <= 13 && y != 18)) {
+                continue;
+            }
+            setHeight(grid, x, y, -1);
         }
     }
 
@@ -77,6 +73,26 @@ int main() {
     setBridge(grid, 11, 18, 1);
     setBridge(grid, 12, 18, 1);
 
+    const Entity scoutB = create(world);
+    transform(world, scoutB)->position = cellCenter(grid, 3, 9);
+    mover(world, scoutB)->target = transform(world, scoutB)->position;
+    mover(world, scoutB)->speed = 10.0f;
+    mover(world, scoutB)->radius = 2.0f;
+
+    const Entity tanker = create(world);
+    transform(world, tanker)->position = Vector2{0.0f, 12.0f};
+    mover(world, tanker)->target = Vector2{0.0f, 12.0f};
+    mover(world, tanker)->speed = 6.0f;
+    mover(world, tanker)->radius = 3.5f;
+    transform(world, tanker)->layer = NavLayer::Air;
+
+    const Entity tankerB = create(world);
+    transform(world, tankerB)->position = cellCenter(grid, 6, 14);
+    mover(world, tankerB)->target = transform(world, tankerB)->position;
+    mover(world, tankerB)->speed = 6.0f;
+    mover(world, tankerB)->radius = 3.5f;
+    transform(world, tankerB)->layer = NavLayer::Air;
+
     const Entity boat = create(world);
     transform(world, boat)->layer = NavLayer::Surface;
     transform(world, boat)->position = cellCenter(grid, 1, 18);
@@ -84,12 +100,26 @@ int main() {
     mover(world, boat)->speed = 8.0f;
     mover(world, boat)->radius = 1.8f;
 
+    const Entity boatB = create(world);
+    transform(world, boatB)->layer = NavLayer::Surface;
+    transform(world, boatB)->position = cellCenter(grid, 16, 17);
+    mover(world, boatB)->target = transform(world, boatB)->position;
+    mover(world, boatB)->speed = 8.0f;
+    mover(world, boatB)->radius = 1.8f;
+
     const Entity sub = create(world);
     transform(world, sub)->layer = NavLayer::Underwater;
     transform(world, sub)->position = cellCenter(grid, 4, 18);
     mover(world, sub)->target = transform(world, sub)->position;
     mover(world, sub)->speed = 8.0f;
     mover(world, sub)->radius = 1.6f;
+
+    const Entity subB = create(world);
+    transform(world, subB)->layer = NavLayer::Underwater;
+    transform(world, subB)->position = cellCenter(grid, 20, 19);
+    mover(world, subB)->target = transform(world, subB)->position;
+    mover(world, subB)->speed = 8.0f;
+    mover(world, subB)->radius = 1.6f;
 
     Selection selection;
     InputFrame input;
