@@ -7,6 +7,11 @@ inline void moveSystem(World& world, const Grid& grid, float dt) {
     for (std::size_t i = 0; i < world.entities.size(); ++i) {
         Transform& t = world.transforms[i];
         Mover& m = world.movers[i];
+        if (!m.waypoints.empty() && grid.cellSize > 0.0f &&
+            distance(t.position, m.target) <= grid.cellSize * 0.05f) {
+            m.target = m.waypoints.front();
+            m.waypoints.erase(m.waypoints.begin());
+        }
         const Vector2 previous = t.position;
         moveOnGrid(t.position, m.target, t.layer, grid, m.speed, dt);
         const Vector2 delta = sub(t.position, previous);

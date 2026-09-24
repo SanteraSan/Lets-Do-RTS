@@ -87,8 +87,9 @@ TEST_CASE("right click on open ground snaps the target to the cell center") {
     order.rightClick = true;
     order.mouse = worldToScreen(Vector2{30.2f, 4.2f}, camera);
     applyInput(world, selection, order, camera, grid);
-    REQUIRE(mover(world, id)->target.x == Catch::Approx(30.5f));
-    REQUIRE(mover(world, id)->target.y == Catch::Approx(4.5f));
+    REQUIRE_FALSE(mover(world, id)->waypoints.empty());
+    REQUIRE(mover(world, id)->waypoints.back().x == Catch::Approx(30.5f));
+    REQUIRE(mover(world, id)->waypoints.back().y == Catch::Approx(4.5f));
 }
 
 TEST_CASE("right click past a cliff stops a ground unit against the cliff") {
@@ -110,8 +111,9 @@ TEST_CASE("right click past a cliff stops a ground unit against the cliff") {
     order.rightClick = true;
     order.mouse = worldToScreen(Vector2{6.2f, 1.2f}, camera);
     applyInput(world, selection, order, camera, grid);
-    REQUIRE(mover(world, id)->target.x == Catch::Approx(2.8f));
-    REQUIRE(mover(world, id)->target.y == Catch::Approx(1.5f));
+    REQUIRE_FALSE(mover(world, id)->waypoints.empty());
+    REQUIRE(mover(world, id)->waypoints.back().x == Catch::Approx(2.8f));
+    REQUIRE(mover(world, id)->waypoints.back().y == Catch::Approx(1.5f));
 }
 
 TEST_CASE("right click on a cliff sends an air unit to the cell center") {
@@ -131,8 +133,9 @@ TEST_CASE("right click on a cliff sends an air unit to the cell center") {
     order.rightClick = true;
     order.mouse = worldToScreen(Vector2{3.1f, 2.1f}, camera);
     applyInput(world, selection, order, camera, grid);
-    REQUIRE(mover(world, id)->target.x == Catch::Approx(3.5f));
-    REQUIRE(mover(world, id)->target.y == Catch::Approx(2.5f));
+    REQUIRE_FALSE(mover(world, id)->waypoints.empty());
+    REQUIRE(mover(world, id)->waypoints.back().x == Catch::Approx(3.5f));
+    REQUIRE(mover(world, id)->waypoints.back().y == Catch::Approx(2.5f));
 }
 
 TEST_CASE("right click outside the grid leaves the target") {

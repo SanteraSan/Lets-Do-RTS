@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ecs/World.hpp"
-#include "nav/Approach.hpp"
+#include "nav/Path.hpp"
 #include "platform/Input.hpp"
 #include "render/StandLift.hpp"
 #include "render/UnitCube.hpp"
@@ -67,8 +67,24 @@ inline void applyInput(
         int stopY = 0;
         if (selectedMover != nullptr && selectedTransform != nullptr &&
             approachOrder(grid, selectedTransform->layer, selectedTransform->position, worldPoint, stopX, stopY)) {
-            selectedMover->target = approachTarget(
-                grid, selectedTransform->layer, selectedTransform->position, worldPoint, selectedMover->radius);
+            const std::vector<Vector2> points = pathTargets(
+                grid,
+                selectedTransform->layer,
+                selectedTransform->position,
+                worldPoint,
+                selectedMover->radius);
+            selectedMover->waypoints.clear();
+            if (points.empty()) {
+                selectedMover->target = approachTarget(
+                    grid,
+                    selectedTransform->layer,
+                    selectedTransform->position,
+                    worldPoint,
+                    selectedMover->radius);
+            } else {
+                selectedMover->target = points.front();
+                selectedMover->waypoints.assign(points.begin() + 1, points.end());
+            }
         }
     }
 

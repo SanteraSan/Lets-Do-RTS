@@ -40,6 +40,7 @@ add_executable(rts_tests
     tests/ecs/SelectionTests.cpp
     tests/nav/GridTests.cpp
     tests/nav/ApproachTests.cpp
+    tests/nav/PathTests.cpp
     tests/nav/GridMoveTests.cpp
     tests/render/AppearanceTests.cpp
     tests/render/UnitSpriteTests.cpp
