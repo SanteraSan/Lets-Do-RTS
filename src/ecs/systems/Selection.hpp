@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ecs/World.hpp"
-#include "nav/Grid.hpp"
+#include "nav/Approach.hpp"
 #include "platform/Input.hpp"
 
 struct Selection {
@@ -32,12 +32,11 @@ inline void applyInput(
     if (input.rightClick) {
         Mover* selectedMover = mover(world, selection.entity);
         Transform* selectedTransform = transform(world, selection.entity);
-        int cellX = 0;
-        int cellY = 0;
+        int stopX = 0;
+        int stopY = 0;
         if (selectedMover != nullptr && selectedTransform != nullptr &&
-            worldToCell(grid, worldPoint, cellX, cellY) &&
-            canOccupyCell(grid, selectedTransform->layer, cellX, cellY)) {
-            selectedMover->target = cellCenter(grid, cellX, cellY);
+            approachOrder(grid, selectedTransform->layer, selectedTransform->position, worldPoint, stopX, stopY)) {
+            selectedMover->target = cellCenter(grid, stopX, stopY);
         }
     }
 
