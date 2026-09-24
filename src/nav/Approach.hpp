@@ -37,7 +37,7 @@ inline bool approachOrder(
             error += dx;
             y += stepY;
         }
-        if (!canOccupyCell(grid, layer, x, y)) {
+        if (!canStepCell(grid, layer, lastX, lastY, x, y)) {
             stopX = lastX;
             stopY = lastY;
             return true;

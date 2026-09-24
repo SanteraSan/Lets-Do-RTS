@@ -50,7 +50,7 @@ inline void moveOnGrid(
     const int spanX = nextX > fromX ? nextX - fromX : fromX - nextX;
     const int spanY = nextY > fromY ? nextY - fromY : fromY - nextY;
     if (spanX <= 1 && spanY <= 1) {
-        if (canOccupyCell(grid, layer, nextX, nextY)) {
+        if (canStepCell(grid, layer, fromX, fromY, nextX, nextY)) {
             position = next;
             return;
         }
@@ -61,7 +61,7 @@ inline void moveOnGrid(
 
     const int stepX = nextX > fromX ? 1 : (nextX < fromX ? -1 : 0);
     const int stepY = nextY > fromY ? 1 : (nextY < fromY ? -1 : 0);
-    if (canOccupyCell(grid, layer, fromX + stepX, fromY + stepY)) {
+    if (canStepCell(grid, layer, fromX, fromY, fromX + stepX, fromY + stepY)) {
         clampInsideCell(grid, fromX + stepX, fromY + stepY, next);
     } else {
         clampInsideCell(grid, fromX, fromY, next);

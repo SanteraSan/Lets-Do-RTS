@@ -18,6 +18,14 @@ TEST_CASE("a cliff is drawn lighter than ground") {
     REQUIRE_FALSE(look.deck);
 }
 
+TEST_CASE("a plateau is drawn green and a ramp is drawn sandy") {
+    const TileAppearance plateau = tileAppearance(Tile{1, false, true, false});
+    REQUIRE(plateau.fill.green == 110);
+    const TileAppearance ramp = tileAppearance(Tile{1, false, false, true});
+    REQUIRE(ramp.fill.red == 180);
+    REQUIRE(ramp.fill.green == 150);
+}
+
 TEST_CASE("water is drawn blue") {
     const TileAppearance look = tileAppearance(Tile{-1, false});
     REQUIRE(look.fill.blue == 120);

@@ -31,11 +31,25 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
             const float y0 = grid.origin.y + static_cast<float>(y) * grid.cellSize;
             const float x1 = x0 + grid.cellSize;
             const float y1 = y0 + grid.cellSize;
-            const ScreenPoint top = worldToScreen(Vector2{x0, y0}, camera);
-            const ScreenPoint right = worldToScreen(Vector2{x1, y0}, camera);
-            const ScreenPoint bottom = worldToScreen(Vector2{x1, y1}, camera);
-            const ScreenPoint left = worldToScreen(Vector2{x0, y1}, camera);
+            const float lift = tile->height > 0 ? static_cast<float>(tile->height) * grid.cellSize * 0.5f : 0.0f;
+            const ScreenPoint top = worldToScreen(Vector2{x0, y0}, lift, camera);
+            const ScreenPoint right = worldToScreen(Vector2{x1, y0}, lift, camera);
+            const ScreenPoint bottom = worldToScreen(Vector2{x1, y1}, lift, camera);
+            const ScreenPoint left = worldToScreen(Vector2{x0, y1}, lift, camera);
             const TileAppearance look = tileAppearance(*tile);
+            if (lift > 0.0f) {
+                const ScreenPoint groundTop = worldToScreen(Vector2{x0, y0}, camera);
+                const ScreenPoint groundRight = worldToScreen(Vector2{x1, y0}, camera);
+                const ScreenPoint groundBottom = worldToScreen(Vector2{x1, y1}, camera);
+                const ScreenPoint groundLeft = worldToScreen(Vector2{x0, y1}, camera);
+                const int red = shade(look.fill.red, -36);
+                const int green = shade(look.fill.green, -36);
+                const int blue = shade(look.fill.blue, -36);
+                drawQuad(draw, groundTop, groundRight, right, top, red, green, blue);
+                drawQuad(draw, groundRight, groundBottom, bottom, right, red, green, blue);
+                drawQuad(draw, groundBottom, groundLeft, left, bottom, red, green, blue);
+                drawQuad(draw, groundLeft, groundTop, top, left, red, green, blue);
+            }
             drawDiamond(draw, top, right, bottom, left, look.fill.red, look.fill.green, look.fill.blue);
             if (look.deck) {
                 drawDiamond(

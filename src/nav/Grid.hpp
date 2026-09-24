@@ -8,6 +8,8 @@
 struct Tile {
     int height = 0;
     bool bridge = false;
+    bool walkable = false;
+    bool ramp = false;
 };
 
 struct Grid {
@@ -60,6 +62,38 @@ inline bool setHeight(Grid& grid, int x, int y, int height) {
     return true;
 }
 
+inline bool setPlateau(Grid& grid, int x, int y, int height) {
+    if (height <= 0) {
+        return false;
+    }
+    const int index = cellIndex(grid, x, y);
+    if (index < 0) {
+        return false;
+    }
+    Tile& tile = grid.tiles[static_cast<std::size_t>(index)];
+    tile.height = height;
+    tile.walkable = true;
+    tile.ramp = false;
+    tile.bridge = false;
+    return true;
+}
+
+inline bool setRamp(Grid& grid, int x, int y, int height) {
+    if (height < 0) {
+        return false;
+    }
+    const int index = cellIndex(grid, x, y);
+    if (index < 0) {
+        return false;
+    }
+    Tile& tile = grid.tiles[static_cast<std::size_t>(index)];
+    tile.height = height;
+    tile.ramp = true;
+    tile.walkable = false;
+    tile.bridge = false;
+    return true;
+}
+
 inline bool setBridge(Grid& grid, int x, int y) {
     const int index = cellIndex(grid, x, y);
     if (index < 0) {
@@ -68,6 +102,8 @@ inline bool setBridge(Grid& grid, int x, int y) {
     Tile& tile = grid.tiles[static_cast<std::size_t>(index)];
     tile.bridge = true;
     tile.height = 0;
+    tile.walkable = false;
+    tile.ramp = false;
     return true;
 }
 
@@ -78,10 +114,28 @@ inline bool canOccupy(NavLayer layer, Tile tile) {
     if (tile.height < 0) {
         return layer == NavLayer::Underwater || layer == NavLayer::Air;
     }
+    if (tile.ramp || tile.walkable) {
+        return layer == NavLayer::Ground || layer == NavLayer::Air;
+    }
     if (tile.height > 0) {
         return layer == NavLayer::Air;
     }
     return layer == NavLayer::Ground || layer == NavLayer::Air;
+}
+
+inline bool canStep(NavLayer layer, Tile from, Tile to) {
+    if (!canOccupy(layer, to)) {
+        return false;
+    }
+    if (layer != NavLayer::Ground) {
+        return true;
+    }
+    const int diff = from.height - to.height;
+    const int distance = diff < 0 ? -diff : diff;
+    if (distance == 0) {
+        return true;
+    }
+    return distance == 1 && (from.ramp || to.ramp);
 }
 
 inline bool worldToCell(const Grid& grid, Vector2 world, int& cellX, int& cellY) {
@@ -113,4 +167,13 @@ inline bool canOccupyCell(const Grid& grid, NavLayer layer, int x, int y) {
         return false;
     }
     return canOccupy(layer, *tile);
+}
+
+inline bool canStepCell(const Grid& grid, NavLayer layer, int fromX, int fromY, int toX, int toY) {
+    const Tile* from = tileAt(grid, fromX, fromY);
+    const Tile* to = tileAt(grid, toX, toY);
+    if (from == nullptr || to == nullptr) {
+        return false;
+    }
+    return canStep(layer, *from, *to);
 }

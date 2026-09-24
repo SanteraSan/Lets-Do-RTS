@@ -55,6 +55,15 @@ int main() {
     for (int y = 0; y < grid.height; ++y) {
         setHeight(grid, 10, y, 2);
     }
+    for (int x = 11; x <= 13; ++x) {
+        for (int y = 0; y < grid.height; ++y) {
+            if (y != 18) {
+                setPlateau(grid, x, y, 1);
+            }
+        }
+    }
+    setRamp(grid, 10, 10, 1);
+    setRamp(grid, 14, 10, 0);
     for (int x = 0; x < grid.width; ++x) {
         if (x != 10) {
             setHeight(grid, x, 18, -1);

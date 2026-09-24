@@ -22,6 +22,12 @@ inline TileAppearance tileAppearance(Tile tile) {
     if (tile.height < 0) {
         return TileAppearance{Rgb{20, 70, 120}, false, {}};
     }
+    if (tile.ramp) {
+        return TileAppearance{Rgb{180, 150, 60}, false, {}};
+    }
+    if (tile.walkable && tile.height > 0) {
+        return TileAppearance{Rgb{78, 110, 78}, false, {}};
+    }
     if (tile.height > 0) {
         return TileAppearance{Rgb{120, 96, 48}, false, {}};
     }

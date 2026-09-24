@@ -56,6 +56,24 @@ TEST_CASE("ground cannot occupy a cliff") {
     REQUIRE_FALSE(canOccupy(NavLayer::Ground, Tile{1}));
 }
 
+TEST_CASE("ground can occupy a plateau and a ramp") {
+    REQUIRE(canOccupy(NavLayer::Ground, Tile{1, false, true, false}));
+    REQUIRE(canOccupy(NavLayer::Ground, Tile{1, false, false, true}));
+    REQUIRE_FALSE(canOccupy(NavLayer::Underwater, Tile{1, false, true, false}));
+}
+
+TEST_CASE("ground steps up only through a ramp") {
+    const Tile low{};
+    const Tile plateau{1, false, true, false};
+    const Tile ramp{1, false, false, true};
+    const Tile cliff{2, false, false, false};
+    REQUIRE_FALSE(canStep(NavLayer::Ground, low, plateau));
+    REQUIRE(canStep(NavLayer::Ground, low, ramp));
+    REQUIRE(canStep(NavLayer::Ground, ramp, plateau));
+    REQUIRE_FALSE(canStep(NavLayer::Ground, plateau, cliff));
+    REQUIRE(canStep(NavLayer::Air, low, cliff));
+}
+
 TEST_CASE("air can occupy a cliff") {
     REQUIRE(canOccupy(NavLayer::Air, Tile{4}));
 }
