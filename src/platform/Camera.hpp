@@ -2,6 +2,8 @@
 
 #include "math/Vector2.hpp"
 
+#include <cmath>
+
 struct Camera {
     Vector2 origin{};
     float pixelsPerUnit = 10.0f;
@@ -21,6 +23,16 @@ inline ScreenPoint worldToScreen(Vector2 world, Camera camera) {
     return ScreenPoint{
         static_cast<int>(camera.offsetX + (dx - dy) * camera.pixelsPerUnit),
         static_cast<int>(camera.offsetY + (dx + dy) * camera.pixelsPerUnit * camera.yScale)};
+}
+
+inline ScreenPoint worldToScreen(Vector2 world, float height, Camera camera) {
+    const ScreenPoint flat = worldToScreen(world, camera);
+    if (height == 0.0f || camera.pixelsPerUnit <= 0.0f) {
+        return flat;
+    }
+    const float edge = std::sqrt(1.0f + camera.yScale * camera.yScale);
+    const int lift = static_cast<int>(height * camera.pixelsPerUnit * edge);
+    return ScreenPoint{flat.x, flat.y - lift};
 }
 
 inline int worldLengthToPixels(float worldLength, Camera camera) {

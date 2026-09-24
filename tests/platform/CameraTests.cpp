@@ -10,6 +10,14 @@ TEST_CASE("worldToScreen maps origin to the camera offset") {
     REQUIRE(point.y == 180);
 }
 
+TEST_CASE("a raised point keeps its screen x and moves up") {
+    const Camera camera{};
+    const ScreenPoint flat = worldToScreen(Vector2{0.0f, 0.0f}, camera);
+    const ScreenPoint raised = worldToScreen(Vector2{0.0f, 0.0f}, 2.0f, camera);
+    REQUIRE(raised.x == flat.x);
+    REQUIRE(raised.y < flat.y);
+}
+
 TEST_CASE("worldToScreen moves +X right and down") {
     const Camera camera{};
     const ScreenPoint point = worldToScreen(Vector2{60.0f, 0.0f}, camera);

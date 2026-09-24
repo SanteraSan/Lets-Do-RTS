@@ -2,11 +2,20 @@
 
 #include "platform/DebugDraw.hpp"
 #include "render/Appearance.hpp"
+#include "render/UnitCube.hpp"
 
 namespace {
 
 ScreenPoint midpoint(ScreenPoint a, ScreenPoint b) {
     return ScreenPoint{(a.x + b.x) / 2, (a.y + b.y) / 2};
+}
+
+int shade(int channel, int delta) {
+    const int value = channel + delta;
+    if (value < 0) {
+        return 0;
+    }
+    return value > 255 ? 255 : value;
 }
 
 } // namespace
@@ -46,11 +55,30 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
         const Rgb color = unitColor(world.transforms[i].layer);
         const ScreenPoint screen = worldToScreen(world.transforms[i].position, camera);
         const int radiusPixels = worldLengthToPixels(world.movers[i].radius, camera);
-        const int spriteHeight = radiusPixels * 3;
-        const int spriteWidth = radiusPixels * 2;
-        draw.sprite(screen, spriteWidth, spriteHeight, color.red, color.green, color.blue);
         const Vector2 facing = length(world.movers[i].facing) == 0.0f ? Vector2{1.0f, 0.0f}
                                                                        : normalize(world.movers[i].facing);
+        const UnitCube cube =
+            visibleUnitCube(world.transforms[i].position, facing, world.movers[i].radius * 2.0f, camera.yScale);
+        for (int faceIndex = 0; faceIndex < cube.count; ++faceIndex) {
+            const CubeFace& face = cube.faces[faceIndex];
+            const int delta = face.front ? 48 : (face.top ? 0 : -48);
+            const ScreenPoint a = worldToScreen(face.corner[0].position, face.corner[0].height, camera);
+            const ScreenPoint b = worldToScreen(face.corner[1].position, face.corner[1].height, camera);
+            const ScreenPoint c = worldToScreen(face.corner[2].position, face.corner[2].height, camera);
+            const ScreenPoint d = worldToScreen(face.corner[3].position, face.corner[3].height, camera);
+            drawQuad(draw, a, b, c, d, shade(color.red, delta), shade(color.green, delta), shade(color.blue, delta));
+            if (face.top) {
+                drawQuad(
+                    draw,
+                    a,
+                    b,
+                    midpoint(b, c),
+                    midpoint(a, d),
+                    shade(color.red, 48),
+                    shade(color.green, 48),
+                    shade(color.blue, 48));
+            }
+        }
         const Vector2 tipWorld =
             add(world.transforms[i].position, scale(facing, world.movers[i].radius * 1.5f));
         drawFacingArrow(draw, screen, worldToScreen(tipWorld, camera), radiusPixels, color.red, color.green, color.blue);

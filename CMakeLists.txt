@@ -43,6 +43,7 @@ add_executable(rts_tests
     tests/nav/GridMoveTests.cpp
     tests/render/AppearanceTests.cpp
     tests/render/UnitSpriteTests.cpp
+    tests/render/UnitCubeTests.cpp
 )
 target_link_libraries(rts_tests PRIVATE rts_math rts_platform Catch2::Catch2WithMain)
 

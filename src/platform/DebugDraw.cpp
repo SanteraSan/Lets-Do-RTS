@@ -56,6 +56,18 @@ void drawFacingArrow(
     draw.line(tip, b, red, green, blue);
 }
 
+void drawQuad(GlDraw& draw, ScreenPoint a, ScreenPoint b, ScreenPoint c, ScreenPoint d, int red, int green, int blue) {
+    draw.triangle(a, b, c, red, green, blue);
+    draw.triangle(a, c, d, red, green, blue);
+    const int outlineRed = lifted(red);
+    const int outlineGreen = lifted(green);
+    const int outlineBlue = lifted(blue);
+    draw.line(a, b, outlineRed, outlineGreen, outlineBlue);
+    draw.line(b, c, outlineRed, outlineGreen, outlineBlue);
+    draw.line(c, d, outlineRed, outlineGreen, outlineBlue);
+    draw.line(d, a, outlineRed, outlineGreen, outlineBlue);
+}
+
 void drawDiamond(
     GlDraw& draw,
     ScreenPoint top,
