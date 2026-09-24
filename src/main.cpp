@@ -79,6 +79,18 @@ int main() {
     mover(world, scoutB)->speed = 10.0f;
     mover(world, scoutB)->radius = 2.0f;
 
+    const Entity scoutC = create(world);
+    transform(world, scoutC)->position = cellCenter(grid, 6, 6);
+    mover(world, scoutC)->target = transform(world, scoutC)->position;
+    mover(world, scoutC)->speed = 10.0f;
+    mover(world, scoutC)->radius = 2.0f;
+
+    const Entity scoutD = create(world);
+    transform(world, scoutD)->position = cellCenter(grid, 1, 12);
+    mover(world, scoutD)->target = transform(world, scoutD)->position;
+    mover(world, scoutD)->speed = 10.0f;
+    mover(world, scoutD)->radius = 2.0f;
+
     const Entity tanker = create(world);
     transform(world, tanker)->position = Vector2{0.0f, 12.0f};
     mover(world, tanker)->target = Vector2{0.0f, 12.0f};
