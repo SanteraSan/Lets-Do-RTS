@@ -89,7 +89,8 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
     for (std::size_t i = 0; i < world.entities.size(); ++i) {
         const Rgb color = unitColor(world.transforms[i].layer);
         const float feet = standLift(grid, world.transforms[i].position, world.transforms[i].layer);
-        const ScreenPoint screen = worldToScreen(world.transforms[i].position, feet, camera);
+        const float markerLift = cellSurfaceLift(grid, world.transforms[i].position);
+        const ScreenPoint marker = worldToScreen(world.transforms[i].position, markerLift, camera);
         const int radiusPixels = worldLengthToPixels(world.movers[i].radius, camera);
         const Vector2 facing = length(world.movers[i].facing) == 0.0f ? Vector2{1.0f, 0.0f}
                                                                        : normalize(world.movers[i].facing);
@@ -136,22 +137,13 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
                     shade(color.blue, 48));
             }
         }
-        const float roof = feet + world.movers[i].radius * 2.0f;
-        const float mark = viewDepth(world.transforms[i].position, roof, camera);
+        const float mark = viewDepth(world.transforms[i].position, markerLift, camera);
         const Vector2 tipWorld =
             add(world.transforms[i].position, scale(facing, world.movers[i].radius * 1.5f));
-        drawFacingArrow(
-            draw,
-            screen,
-            worldToScreen(tipWorld, feet, camera),
-            radiusPixels,
-            mark,
-            color.red,
-            color.green,
-            color.blue);
-
+        const ScreenPoint tip = worldToScreen(tipWorld, markerLift, camera);
         if (world.entities[i] == selection.entity) {
-            drawCircle(draw, screen, radiusPixels + 3, mark, 255, 255, 255);
+            drawCircle(draw, marker, radiusPixels + 3, mark, 255, 255, 255);
+            drawFacingArrow(draw, marker, tip, radiusPixels, mark, color.red, color.green, color.blue);
         }
     }
 }

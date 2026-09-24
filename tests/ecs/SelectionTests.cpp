@@ -3,23 +3,27 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("hitUnit returns the entity whose circle contains the point") {
+TEST_CASE("hitUnit returns the entity whose cube contains the click") {
     World world;
     const Entity id = create(world);
     transform(world, id)->position = Vector2{10.0f, 0.0f};
     mover(world, id)->radius = 2.0f;
-    REQUIRE(hitUnit(world, Vector2{11.0f, 0.0f}) == id);
+    const Camera camera{};
+    const ScreenPoint click = worldToScreen(Vector2{11.0f, 0.0f}, camera);
+    REQUIRE(hitUnit(world, click, camera, Grid{}) == id);
 }
 
-TEST_CASE("hitUnit misses when the point is outside every radius") {
+TEST_CASE("hitUnit misses when the click is outside every cube") {
     World world;
     const Entity id = create(world);
     transform(world, id)->position = Vector2{10.0f, 0.0f};
     mover(world, id)->radius = 2.0f;
-    REQUIRE(hitUnit(world, Vector2{20.0f, 0.0f}) == kInvalidEntity);
+    const Camera camera{};
+    const ScreenPoint click = worldToScreen(Vector2{20.0f, 0.0f}, camera);
+    REQUIRE(hitUnit(world, click, camera, Grid{}) == kInvalidEntity);
 }
 
-TEST_CASE("hitUnit prefers the later entity when circles overlap") {
+TEST_CASE("hitUnit prefers the later entity when cubes overlap") {
     World world;
     const Entity first = create(world);
     const Entity second = create(world);
@@ -27,7 +31,25 @@ TEST_CASE("hitUnit prefers the later entity when circles overlap") {
     mover(world, first)->radius = 5.0f;
     transform(world, second)->position = Vector2{0.0f, 0.0f};
     mover(world, second)->radius = 5.0f;
-    REQUIRE(hitUnit(world, Vector2{0.0f, 0.0f}) == second);
+    const Camera camera{};
+    const ScreenPoint click = worldToScreen(Vector2{0.0f, 0.0f}, camera);
+    REQUIRE(hitUnit(world, click, camera, Grid{}) == second);
+}
+
+TEST_CASE("hitUnit selects an air unit on its raised cube") {
+    World world;
+    Grid grid;
+    REQUIRE(makeGrid(grid, 4, 4));
+    grid.cellSize = 4.0f;
+    const Entity id = create(world);
+    transform(world, id)->position = cellCenter(grid, 1, 1);
+    transform(world, id)->layer = NavLayer::Air;
+    mover(world, id)->radius = 2.0f;
+    const Camera camera{};
+    const ScreenPoint onGround = worldToScreen(transform(world, id)->position, camera);
+    const ScreenPoint onCube = worldToScreen(transform(world, id)->position, standLift(grid, transform(world, id)->position, NavLayer::Air), camera);
+    REQUIRE(hitUnit(world, onGround, camera, grid) == kInvalidEntity);
+    REQUIRE(hitUnit(world, onCube, camera, grid) == id);
 }
 
 TEST_CASE("left click selects a unit and click on empty space clears it") {

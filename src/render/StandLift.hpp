@@ -10,10 +10,7 @@ inline float surfaceLift(int height, float cellSize) {
     return static_cast<float>(height) * cellSize * 0.5f;
 }
 
-inline float standLift(const Grid& grid, Vector2 position, NavLayer layer) {
-    if (layer != NavLayer::Ground && layer != NavLayer::Air) {
-        return 0.0f;
-    }
+inline float cellSurfaceLift(const Grid& grid, Vector2 position) {
     int cellX = 0;
     int cellY = 0;
     if (!worldToCell(grid, position, cellX, cellY)) {
@@ -23,9 +20,19 @@ inline float standLift(const Grid& grid, Vector2 position, NavLayer layer) {
     if (tile == nullptr) {
         return 0.0f;
     }
-    const float surface = surfaceLift(tile->height, grid.cellSize);
+    return surfaceLift(tile->height, grid.cellSize);
+}
+
+inline float standLift(const Grid& grid, Vector2 position, NavLayer layer) {
+    const float surface = cellSurfaceLift(grid, position);
     if (layer == NavLayer::Air) {
         return surface + grid.cellSize;
+    }
+    if (layer == NavLayer::Underwater) {
+        return surface - grid.cellSize;
+    }
+    if (layer != NavLayer::Ground) {
+        return 0.0f;
     }
     return surface;
 }
