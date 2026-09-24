@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/World.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "nav/UnitBlock.hpp"
 #include "platform/Input.hpp"
 #include "render/StandLift.hpp"
@@ -72,25 +73,10 @@ inline void applyInput(
             if (self >= 0) {
                 blockingCells(world, static_cast<std::size_t>(self), selectedTransform->layer, grid, taken);
             }
-            const std::vector<Vector2> points = pathTargets(
-                grid,
-                selectedTransform->layer,
-                selectedTransform->position,
-                worldPoint,
-                selectedMover->radius,
-                &taken);
-            selectedMover->waypoints.clear();
-            if (points.empty()) {
-                selectedMover->target = approachTarget(
-                    grid,
-                    selectedTransform->layer,
-                    selectedTransform->position,
-                    worldPoint,
-                    selectedMover->radius);
-            } else {
-                selectedMover->target = points.front();
-                selectedMover->waypoints.assign(points.begin() + 1, points.end());
-            }
+            selectedMover->order = worldPoint;
+            selectedMover->ordered = true;
+            steerToOrder(
+                *selectedMover, selectedTransform->layer, selectedTransform->position, grid, taken);
         }
     }
 

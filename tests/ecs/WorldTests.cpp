@@ -77,3 +77,32 @@ TEST_CASE("moveSystem keeps facing still when a ground unit is stopped at a clif
     REQUIRE(mover(world, id)->facing.x == Catch::Approx(1.0f));
     REQUIRE(mover(world, id)->facing.y == Catch::Approx(0.0f));
 }
+
+TEST_CASE("an order steps around a unit and through the cell once it leaves") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 5, 3));
+    World world;
+    const Entity walker = create(world);
+    const Entity blocker = create(world);
+    transform(world, walker)->position = cellCenter(grid, 0, 1);
+    mover(world, walker)->order = cellCenter(grid, 4, 1);
+    mover(world, walker)->ordered = true;
+    mover(world, walker)->speed = 0.0f;
+    mover(world, walker)->radius = 0.2f;
+    transform(world, blocker)->position = cellCenter(grid, 2, 1);
+
+    moveSystem(world, grid, 1.0f);
+    int stepX = -1;
+    int stepY = -1;
+    REQUIRE(worldToCell(grid, mover(world, walker)->target, stepX, stepY));
+    REQUIRE((stepX != 2 || stepY != 1));
+    for (const Vector2& point : mover(world, walker)->waypoints) {
+        REQUIRE(worldToCell(grid, point, stepX, stepY));
+        REQUIRE((stepX != 2 || stepY != 1));
+    }
+
+    transform(world, blocker)->position = cellCenter(grid, 2, 0);
+    moveSystem(world, grid, 1.0f);
+    REQUIRE(mover(world, walker)->target.x == Catch::Approx(cellCenter(grid, 1, 1).x));
+    REQUIRE(mover(world, walker)->target.y == Catch::Approx(cellCenter(grid, 1, 1).y));
+}
