@@ -10,6 +10,16 @@ TEST_CASE("worldToScreen maps origin to the camera offset") {
     REQUIRE(point.y == 180);
 }
 
+TEST_CASE("a point toward the camera is closer than the origin") {
+    const Camera camera{};
+    REQUIRE(viewDepth(Vector2{10.0f, 0.0f}, 0.0f, camera) < viewDepth(Vector2{0.0f, 0.0f}, 0.0f, camera));
+}
+
+TEST_CASE("a raised point is closer than the same point on the ground") {
+    const Camera camera{};
+    REQUIRE(viewDepth(Vector2{0.0f, 0.0f}, 2.0f, camera) < viewDepth(Vector2{0.0f, 0.0f}, 0.0f, camera));
+}
+
 TEST_CASE("a raised point keeps its screen x and moves up") {
     const Camera camera{};
     const ScreenPoint flat = worldToScreen(Vector2{0.0f, 0.0f}, camera);

@@ -7,6 +7,7 @@
 struct GlVertex {
     float x = 0.0f;
     float y = 0.0f;
+    float z = 0.0f;
     float red = 0.0f;
     float green = 0.0f;
     float blue = 0.0f;
@@ -40,8 +41,8 @@ struct GlDraw {
     bool init();
     void shutdown();
     void clear(float red, float green, float blue);
-    void triangle(ScreenPoint a, ScreenPoint b, ScreenPoint c, int red, int green, int blue);
-    void line(ScreenPoint a, ScreenPoint b, int red, int green, int blue);
+    void triangle(ScreenPoint a, ScreenPoint b, ScreenPoint c, float za, float zb, float zc, int red, int green, int blue);
+    void line(ScreenPoint a, ScreenPoint b, float za, float zb, int red, int green, int blue);
     void sprite(ScreenPoint feet, int pixelWidth, int pixelHeight, int red, int green, int blue);
     void flush();
 };

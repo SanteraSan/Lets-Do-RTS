@@ -35,6 +35,25 @@ inline ScreenPoint worldToScreen(Vector2 world, float height, Camera camera) {
     return ScreenPoint{flat.x, flat.y - lift};
 }
 
+inline float viewDepth(Vector2 world, float height, Camera camera) {
+    const float dx = world.x - camera.origin.x;
+    const float dy = world.y - camera.origin.y;
+    const float edge = std::sqrt(1.0f + camera.yScale * camera.yScale);
+    const float heightWeight = edge > 0.0f ? (2.0f * camera.yScale / edge) : 0.0f;
+    return -(dx + dy) - height * heightWeight;
+}
+
+inline float depthToClip(float depth) {
+    const float z = depth / 512.0f;
+    if (z < -1.0f) {
+        return -1.0f;
+    }
+    if (z > 1.0f) {
+        return 1.0f;
+    }
+    return z;
+}
+
 inline int worldLengthToPixels(float worldLength, Camera camera) {
     if (worldLength <= 0.0f || camera.pixelsPerUnit <= 0.0f) {
         return 0;

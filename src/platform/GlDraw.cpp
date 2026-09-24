@@ -11,14 +11,14 @@
 namespace {
 
 const char* kVertexShader = R"(#version 330 core
-layout(location = 0) in vec2 aPos;
+layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aColor;
 uniform vec2 uScreen;
 out vec3 vColor;
 void main() {
     float x = aPos.x / uScreen.x * 2.0 - 1.0;
     float y = 1.0 - aPos.y / uScreen.y * 2.0;
-    gl_Position = vec4(x, y, 0.0, 1.0);
+    gl_Position = vec4(x, y, aPos.z, 1.0);
     vColor = aColor;
 }
 )";
@@ -74,10 +74,11 @@ unsigned compileShader(unsigned type, const char* source) {
     return shader;
 }
 
-GlVertex vertex(ScreenPoint point, int red, int green, int blue) {
+GlVertex vertex(ScreenPoint point, float depth, int red, int green, int blue) {
     return GlVertex{
         static_cast<float>(point.x),
         static_cast<float>(point.y),
+        depthToClip(depth),
         static_cast<float>(red) / 255.0f,
         static_cast<float>(green) / 255.0f,
         static_cast<float>(blue) / 255.0f};
@@ -136,10 +137,10 @@ bool GlDraw::init() {
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GlVertex), nullptr);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GlVertex), nullptr);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(
-        1, 3, GL_FLOAT, GL_FALSE, sizeof(GlVertex), reinterpret_cast<void*>(sizeof(float) * 2));
+        1, 3, GL_FLOAT, GL_FALSE, sizeof(GlVertex), reinterpret_cast<void*>(sizeof(float) * 3));
 
     const unsigned spriteVertex = compileShader(GL_VERTEX_SHADER, kSpriteVertexShader);
     const unsigned spriteFragment = compileShader(GL_FRAGMENT_SHADER, kSpriteFragmentShader);
@@ -237,19 +238,23 @@ void GlDraw::clear(float red, float green, float blue) {
     if (width > 0 && height > 0) {
         glViewport(0, 0, width, height);
     }
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     glClearColor(red, green, blue, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void GlDraw::triangle(ScreenPoint a, ScreenPoint b, ScreenPoint c, int red, int green, int blue) {
-    triangles.push_back(vertex(a, red, green, blue));
-    triangles.push_back(vertex(b, red, green, blue));
-    triangles.push_back(vertex(c, red, green, blue));
+void GlDraw::triangle(
+    ScreenPoint a, ScreenPoint b, ScreenPoint c, float za, float zb, float zc, int red, int green, int blue) {
+    triangles.push_back(vertex(a, za, red, green, blue));
+    triangles.push_back(vertex(b, zb, red, green, blue));
+    triangles.push_back(vertex(c, zc, red, green, blue));
 }
 
-void GlDraw::line(ScreenPoint a, ScreenPoint b, int red, int green, int blue) {
-    lines.push_back(vertex(a, red, green, blue));
-    lines.push_back(vertex(b, red, green, blue));
+void GlDraw::line(ScreenPoint a, ScreenPoint b, float za, float zb, int red, int green, int blue) {
+    constexpr float kOutlineCloser = 0.05f;
+    lines.push_back(vertex(a, za - kOutlineCloser, red, green, blue));
+    lines.push_back(vertex(b, zb - kOutlineCloser, red, green, blue));
 }
 
 void GlDraw::sprite(ScreenPoint feet, int pixelWidth, int pixelHeight, int red, int green, int blue) {
