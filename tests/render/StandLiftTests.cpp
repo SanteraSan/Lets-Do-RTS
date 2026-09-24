@@ -1,3 +1,4 @@
+#include "platform/Camera.hpp"
 #include "render/StandLift.hpp"
 
 #include <catch2/catch_approx.hpp>
@@ -16,7 +17,7 @@ TEST_CASE("a plateau lifts a ground unit onto its surface") {
     const Vector2 onPlateau = cellCenter(grid, 1, 1);
     REQUIRE(standLift(grid, onPlateau, NavLayer::Ground) == Catch::Approx(2.0f));
     REQUIRE(standLift(grid, onPlateau, NavLayer::Air) == Catch::Approx(6.0f));
-    REQUIRE(standLift(grid, onPlateau, NavLayer::Underwater) == Catch::Approx(-2.0f));
+    REQUIRE(standLift(grid, onPlateau, NavLayer::Underwater) == Catch::Approx(0.0f));
 }
 
 TEST_CASE("air flies one cell above flat ground") {
@@ -27,8 +28,16 @@ TEST_CASE("air flies one cell above flat ground") {
     REQUIRE(standLift(grid, flat, NavLayer::Air) == Catch::Approx(4.0f));
     REQUIRE(standLift(grid, flat, NavLayer::Ground) == Catch::Approx(0.0f));
     REQUIRE(setHeight(grid, 0, 0, -1));
-    REQUIRE(standLift(grid, flat, NavLayer::Underwater) == Catch::Approx(-4.0f));
+    REQUIRE(standLift(grid, flat, NavLayer::Underwater) == Catch::Approx(0.0f));
     REQUIRE(standLift(grid, flat, NavLayer::Surface) == Catch::Approx(0.0f));
+}
+
+TEST_CASE("a surface unit draws closer than an underwater unit on the same point") {
+    const Camera camera{};
+    const Vector2 point{1.0f, 2.0f};
+    const float surface = viewDepth(point, 0.0f, camera) + layerDepthBias(NavLayer::Surface);
+    const float underwater = viewDepth(point, 0.0f, camera) + layerDepthBias(NavLayer::Underwater);
+    REQUIRE(surface < underwater);
 }
 
 TEST_CASE("a cliff stands twice as high as the plateau beside it") {

@@ -28,11 +28,15 @@ inline float standLift(const Grid& grid, Vector2 position, NavLayer layer) {
     if (layer == NavLayer::Air) {
         return surface + grid.cellSize;
     }
-    if (layer == NavLayer::Underwater) {
-        return surface - grid.cellSize;
-    }
     if (layer != NavLayer::Ground) {
         return 0.0f;
     }
     return surface;
+}
+
+inline float layerDepthBias(NavLayer layer) {
+    if (layer == NavLayer::Underwater) {
+        return 0.35f;
+    }
+    return 0.0f;
 }

@@ -103,10 +103,11 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
             const float hb = face.corner[1].height + feet;
             const float hc = face.corner[2].height + feet;
             const float hd = face.corner[3].height + feet;
-            const float za = viewDepth(face.corner[0].position, ha, camera);
-            const float zb = viewDepth(face.corner[1].position, hb, camera);
-            const float zc = viewDepth(face.corner[2].position, hc, camera);
-            const float zd = viewDepth(face.corner[3].position, hd, camera);
+            const float bias = layerDepthBias(world.transforms[i].layer);
+            const float za = viewDepth(face.corner[0].position, ha, camera) + bias;
+            const float zb = viewDepth(face.corner[1].position, hb, camera) + bias;
+            const float zc = viewDepth(face.corner[2].position, hc, camera) + bias;
+            const float zd = viewDepth(face.corner[3].position, hd, camera) + bias;
             const ScreenPoint a = worldToScreen(face.corner[0].position, ha, camera);
             const ScreenPoint b = worldToScreen(face.corner[1].position, hb, camera);
             const ScreenPoint c = worldToScreen(face.corner[2].position, hc, camera);
@@ -114,10 +115,10 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
             drawQuad(draw, a, b, c, d, za, zb, zc, zd, shade(color.red, delta), shade(color.green, delta), shade(color.blue, delta));
             if (face.top) {
                 constexpr float kStripeLift = 0.2f;
-                const float zaStripe = viewDepth(face.corner[0].position, ha + kStripeLift, camera);
-                const float zbStripe = viewDepth(face.corner[1].position, hb + kStripeLift, camera);
-                const float zcStripe = viewDepth(face.corner[2].position, hc + kStripeLift, camera);
-                const float zdStripe = viewDepth(face.corner[3].position, hd + kStripeLift, camera);
+                const float zaStripe = viewDepth(face.corner[0].position, ha + kStripeLift, camera) + bias;
+                const float zbStripe = viewDepth(face.corner[1].position, hb + kStripeLift, camera) + bias;
+                const float zcStripe = viewDepth(face.corner[2].position, hc + kStripeLift, camera) + bias;
+                const float zdStripe = viewDepth(face.corner[3].position, hd + kStripeLift, camera) + bias;
                 const ScreenPoint stripeA = worldToScreen(face.corner[0].position, ha + kStripeLift, camera);
                 const ScreenPoint stripeB = worldToScreen(face.corner[1].position, hb + kStripeLift, camera);
                 const ScreenPoint stripeC = worldToScreen(face.corner[2].position, hc + kStripeLift, camera);
