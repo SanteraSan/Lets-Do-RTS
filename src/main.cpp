@@ -5,8 +5,8 @@
 #include "ecs/systems/Selection.hpp"
 #include "nav/Grid.hpp"
 #include "platform/Camera.hpp"
-#include "platform/DebugDraw.hpp"
 #include "platform/Window.hpp"
+#include "render/DrawWorld.hpp"
 
 #include <iostream>
 #include <string>
@@ -96,67 +96,7 @@ int main() {
         }
 
         if (window.beginFrame()) {
-            for (int y = 0; y < grid.height; ++y) {
-                for (int x = 0; x < grid.width; ++x) {
-                    const float x0 = grid.origin.x + static_cast<float>(x) * grid.cellSize;
-                    const float y0 = grid.origin.y + static_cast<float>(y) * grid.cellSize;
-                    const float x1 = x0 + grid.cellSize;
-                    const float y1 = y0 + grid.cellSize;
-                    const Tile* tile = tileAt(grid, x, y);
-                    const int height = tile == nullptr ? 0 : tile->height;
-                    const bool bridge = tile != nullptr && tile->bridge;
-                    const ScreenPoint top = worldToScreen(Vector2{x0, y0}, camera);
-                    const ScreenPoint right = worldToScreen(Vector2{x1, y0}, camera);
-                    const ScreenPoint bottom = worldToScreen(Vector2{x1, y1}, camera);
-                    const ScreenPoint left = worldToScreen(Vector2{x0, y1}, camera);
-                    if (bridge) {
-                        drawDiamond(window.renderer, top, right, bottom, left, 20, 70, 120);
-                        const ScreenPoint bandTop{(top.x + right.x) / 2, (top.y + right.y) / 2};
-                        const ScreenPoint bandRight{(right.x + bottom.x) / 2, (right.y + bottom.y) / 2};
-                        const ScreenPoint bandBottom{(bottom.x + left.x) / 2, (bottom.y + left.y) / 2};
-                        const ScreenPoint bandLeft{(left.x + top.x) / 2, (left.y + top.y) / 2};
-                        drawDiamond(window.renderer, bandTop, bandRight, bandBottom, bandLeft, 24, 36, 44);
-                    } else {
-                        int red = 24;
-                        int green = 36;
-                        int blue = 44;
-                        if (height < 0) {
-                            red = 20;
-                            green = 70;
-                            blue = 120;
-                        } else if (height > 0) {
-                            red = 120;
-                            green = 96;
-                            blue = 48;
-                        }
-                        drawDiamond(window.renderer, top, right, bottom, left, red, green, blue);
-                    }
-                }
-            }
-            for (std::size_t i = 0; i < world.entities.size(); ++i) {
-                const NavLayer layer = world.transforms[i].layer;
-                if (layer == NavLayer::Air) {
-                    SDL_SetRenderDrawColor(window.renderer, 80, 200, 220, 255);
-                } else if (layer == NavLayer::Underwater) {
-                    SDL_SetRenderDrawColor(window.renderer, 80, 140, 255, 255);
-                } else {
-                    SDL_SetRenderDrawColor(window.renderer, 220, 220, 80, 255);
-                }
-                const ScreenPoint screen = worldToScreen(world.transforms[i].position, camera);
-                const int radiusPixels = worldLengthToPixels(world.movers[i].radius, camera);
-                drawCircle(window.renderer, screen, radiusPixels);
-                const Vector2 facing = length(world.movers[i].facing) == 0.0f
-                    ? Vector2{1.0f, 0.0f}
-                    : normalize(world.movers[i].facing);
-                const Vector2 tipWorld =
-                    add(world.transforms[i].position, scale(facing, world.movers[i].radius * 1.5f));
-                drawFacingArrow(window.renderer, screen, worldToScreen(tipWorld, camera), radiusPixels);
-
-                if (world.entities[i] == selection.entity) {
-                    SDL_SetRenderDrawColor(window.renderer, 255, 255, 255, 255);
-                    drawCircle(window.renderer, screen, radiusPixels + 3);
-                }
-            }
+            drawWorld(window.renderer, world, grid, camera, selection);
             window.endFrame();
         }
 

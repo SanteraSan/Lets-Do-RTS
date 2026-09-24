@@ -15,6 +15,7 @@ find_package(SDL2 CONFIG REQUIRED)
 add_library(rts_platform
     src/platform/Window.cpp
     src/platform/DebugDraw.cpp
+    src/render/DrawWorld.cpp
 )
 target_include_directories(rts_platform PUBLIC "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(rts_platform PUBLIC SDL2::SDL2)
@@ -38,6 +39,7 @@ add_executable(rts_tests
     tests/nav/GridTests.cpp
     tests/nav/ApproachTests.cpp
     tests/nav/GridMoveTests.cpp
+    tests/render/AppearanceTests.cpp
 )
 target_link_libraries(rts_tests PRIVATE rts_math rts_platform Catch2::Catch2WithMain)
 
