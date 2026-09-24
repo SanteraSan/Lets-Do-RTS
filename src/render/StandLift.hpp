@@ -11,7 +11,7 @@ inline float surfaceLift(int height, float cellSize) {
 }
 
 inline float standLift(const Grid& grid, Vector2 position, NavLayer layer) {
-    if (layer != NavLayer::Ground) {
+    if (layer != NavLayer::Ground && layer != NavLayer::Air) {
         return 0.0f;
     }
     int cellX = 0;
@@ -23,5 +23,9 @@ inline float standLift(const Grid& grid, Vector2 position, NavLayer layer) {
     if (tile == nullptr) {
         return 0.0f;
     }
-    return surfaceLift(tile->height, grid.cellSize);
+    const float surface = surfaceLift(tile->height, grid.cellSize);
+    if (layer == NavLayer::Air) {
+        return surface + grid.cellSize;
+    }
+    return surface;
 }

@@ -112,16 +112,25 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
             const ScreenPoint d = worldToScreen(face.corner[3].position, hd, camera);
             drawQuad(draw, a, b, c, d, za, zb, zc, zd, shade(color.red, delta), shade(color.green, delta), shade(color.blue, delta));
             if (face.top) {
+                constexpr float kStripeLift = 0.2f;
+                const float zaStripe = viewDepth(face.corner[0].position, ha + kStripeLift, camera);
+                const float zbStripe = viewDepth(face.corner[1].position, hb + kStripeLift, camera);
+                const float zcStripe = viewDepth(face.corner[2].position, hc + kStripeLift, camera);
+                const float zdStripe = viewDepth(face.corner[3].position, hd + kStripeLift, camera);
+                const ScreenPoint stripeA = worldToScreen(face.corner[0].position, ha + kStripeLift, camera);
+                const ScreenPoint stripeB = worldToScreen(face.corner[1].position, hb + kStripeLift, camera);
+                const ScreenPoint stripeC = worldToScreen(face.corner[2].position, hc + kStripeLift, camera);
+                const ScreenPoint stripeD = worldToScreen(face.corner[3].position, hd + kStripeLift, camera);
                 drawQuad(
                     draw,
-                    a,
-                    b,
-                    midpoint(b, c),
-                    midpoint(a, d),
-                    za,
-                    zb,
-                    (zb + zc) * 0.5f,
-                    (za + zd) * 0.5f,
+                    stripeA,
+                    stripeB,
+                    midpoint(stripeB, stripeC),
+                    midpoint(stripeA, stripeD),
+                    zaStripe,
+                    zbStripe,
+                    (zbStripe + zcStripe) * 0.5f,
+                    (zaStripe + zdStripe) * 0.5f,
                     shade(color.red, 48),
                     shade(color.green, 48),
                     shade(color.blue, 48));
