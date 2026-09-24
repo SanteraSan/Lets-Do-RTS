@@ -55,6 +55,18 @@ int main() {
     for (int y = 0; y < grid.height; ++y) {
         setHeight(grid, 10, y, 2);
     }
+    for (int x = 0; x < grid.width; ++x) {
+        if (x != 10) {
+            setHeight(grid, x, 18, -1);
+        }
+    }
+
+    const Entity sub = create(world);
+    transform(world, sub)->layer = NavLayer::Underwater;
+    transform(world, sub)->position = cellCenter(grid, 4, 18);
+    mover(world, sub)->target = transform(world, sub)->position;
+    mover(world, sub)->speed = 8.0f;
+    mover(world, sub)->radius = 1.6f;
 
     Selection selection;
     InputFrame input;
@@ -87,23 +99,38 @@ int main() {
                     const float x1 = x0 + grid.cellSize;
                     const float y1 = y0 + grid.cellSize;
                     const Tile* tile = tileAt(grid, x, y);
-                    const bool cliff = tile != nullptr && tile->height > 0;
+                    const int height = tile == nullptr ? 0 : tile->height;
+                    int red = 24;
+                    int green = 36;
+                    int blue = 44;
+                    if (height < 0) {
+                        red = 20;
+                        green = 70;
+                        blue = 120;
+                    } else if (height > 0) {
+                        red = 120;
+                        green = 96;
+                        blue = 48;
+                    }
                     drawDiamond(
                         window.renderer,
                         worldToScreen(Vector2{x0, y0}, camera),
                         worldToScreen(Vector2{x1, y0}, camera),
                         worldToScreen(Vector2{x1, y1}, camera),
                         worldToScreen(Vector2{x0, y1}, camera),
-                        cliff ? 120 : 24,
-                        cliff ? 96 : 36,
-                        cliff ? 48 : 44);
+                        red,
+                        green,
+                        blue);
                 }
             }
             for (std::size_t i = 0; i < world.entities.size(); ++i) {
-                if (i == 0) {
-                    SDL_SetRenderDrawColor(window.renderer, 220, 220, 80, 255);
-                } else {
+                const NavLayer layer = world.transforms[i].layer;
+                if (layer == NavLayer::Air) {
                     SDL_SetRenderDrawColor(window.renderer, 80, 200, 220, 255);
+                } else if (layer == NavLayer::Underwater) {
+                    SDL_SetRenderDrawColor(window.renderer, 80, 140, 255, 255);
+                } else {
+                    SDL_SetRenderDrawColor(window.renderer, 220, 220, 80, 255);
                 }
                 const ScreenPoint screen = worldToScreen(world.transforms[i].position, camera);
                 const int radiusPixels = worldLengthToPixels(world.movers[i].radius, camera);

@@ -63,6 +63,33 @@ TEST_CASE("moveOnGrid keeps a step that enters the side cell") {
     REQUIRE(position.y == Catch::Approx(0.254944f).margin(0.001f));
 }
 
+TEST_CASE("moveOnGrid lets an underwater unit enter water") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 8, 4));
+    REQUIRE(setHeight(grid, 1, 1, -1));
+    REQUIRE(setHeight(grid, 2, 1, -1));
+    Vector2 position{1.4f, 1.2f};
+    moveOnGrid(position, Vector2{6.2f, 1.2f}, NavLayer::Underwater, grid, 10.0f, 1.0f);
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, position, cellX, cellY));
+    REQUIRE(cellX == 2);
+    REQUIRE(cellY == 1);
+}
+
+TEST_CASE("moveOnGrid keeps a ground unit out of water") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 8, 4));
+    REQUIRE(setHeight(grid, 2, 1, -1));
+    Vector2 position{1.4f, 1.2f};
+    moveOnGrid(position, Vector2{6.2f, 1.2f}, NavLayer::Ground, grid, 10.0f, 1.0f);
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, position, cellX, cellY));
+    REQUIRE(cellX == 1);
+    REQUIRE(cellY == 1);
+}
+
 TEST_CASE("moveOnGrid ignores a non-positive speed") {
     Grid grid;
     REQUIRE(makeGrid(grid, 4, 4));

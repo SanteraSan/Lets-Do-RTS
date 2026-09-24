@@ -61,7 +61,7 @@ inline bool setHeight(Grid& grid, int x, int y, int height) {
 
 inline bool canOccupy(NavLayer layer, Tile tile) {
     if (tile.height < 0) {
-        return false;
+        return layer == NavLayer::Underwater || layer == NavLayer::Air;
     }
     if (tile.height > 0) {
         return layer == NavLayer::Air;

@@ -69,10 +69,16 @@ TEST_CASE("underwater cannot occupy flat ground or a cliff") {
     REQUIRE_FALSE(canOccupy(NavLayer::Underwater, Tile{2}));
 }
 
-TEST_CASE("a negative height cannot be occupied yet") {
+TEST_CASE("underwater can occupy water") {
+    REQUIRE(canOccupy(NavLayer::Underwater, Tile{-1}));
+}
+
+TEST_CASE("ground cannot occupy water") {
     REQUIRE_FALSE(canOccupy(NavLayer::Ground, Tile{-1}));
-    REQUIRE_FALSE(canOccupy(NavLayer::Air, Tile{-1}));
-    REQUIRE_FALSE(canOccupy(NavLayer::Underwater, Tile{-1}));
+}
+
+TEST_CASE("air can occupy water") {
+    REQUIRE(canOccupy(NavLayer::Air, Tile{-2}));
 }
 
 TEST_CASE("a click on a cell center maps back to that cell") {
