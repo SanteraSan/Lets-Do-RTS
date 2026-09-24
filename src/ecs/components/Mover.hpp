@@ -10,6 +10,7 @@ struct Mover {
     Vector2 order{};
     float speed = 0.0f;
     float radius = 2.0f;
+    float blockedFor = 0.0f;
     bool ordered = false;
     std::vector<Vector2> waypoints{};
 };

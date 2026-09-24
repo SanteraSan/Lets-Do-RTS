@@ -106,3 +106,72 @@ TEST_CASE("an order steps around a unit and through the cell once it leaves") {
     REQUIRE(mover(world, walker)->target.x == Catch::Approx(cellCenter(grid, 1, 1).x));
     REQUIRE(mover(world, walker)->target.y == Catch::Approx(cellCenter(grid, 1, 1).y));
 }
+
+TEST_CASE("a blocked order gives up after one second and stays put") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 5, 1));
+    World world;
+    const Entity walker = create(world);
+    const Entity blocker = create(world);
+    transform(world, walker)->position = Vector2{1.999f, 0.5f};
+    mover(world, walker)->order = cellCenter(grid, 4, 0);
+    mover(world, walker)->ordered = true;
+    mover(world, walker)->speed = 10.0f;
+    mover(world, walker)->radius = 0.2f;
+    transform(world, blocker)->position = cellCenter(grid, 2, 0);
+
+    moveSystem(world, grid, 0.6f);
+    REQUIRE(mover(world, walker)->ordered);
+    moveSystem(world, grid, 0.4f);
+    REQUIRE_FALSE(mover(world, walker)->ordered);
+    REQUIRE(transform(world, walker)->position.x == Catch::Approx(1.999f));
+
+    transform(world, blocker)->position = cellCenter(grid, 0, 0);
+    moveSystem(world, grid, 1.0f);
+    REQUIRE_FALSE(mover(world, walker)->ordered);
+    REQUIRE(transform(world, walker)->position.x == Catch::Approx(1.999f));
+}
+
+TEST_CASE("a blocked order continues when the cell opens within one second") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 5, 3));
+    for (int x = 0; x < grid.width; ++x) {
+        REQUIRE(setHeight(grid, x, 0, 2));
+        REQUIRE(setHeight(grid, x, 2, 2));
+    }
+    World world;
+    const Entity walker = create(world);
+    const Entity blocker = create(world);
+    transform(world, walker)->position = Vector2{1.8f, 1.5f};
+    mover(world, walker)->order = cellCenter(grid, 4, 1);
+    mover(world, walker)->ordered = true;
+    mover(world, walker)->speed = 0.0f;
+    mover(world, walker)->radius = 0.2f;
+    transform(world, blocker)->position = cellCenter(grid, 2, 1);
+
+    moveSystem(world, grid, 0.4f);
+    REQUIRE(mover(world, walker)->ordered);
+    transform(world, blocker)->position = cellCenter(grid, 2, 0);
+    moveSystem(world, grid, 0.1f);
+    REQUIRE(mover(world, walker)->ordered);
+    REQUIRE(mover(world, walker)->target.x == Catch::Approx(cellCenter(grid, 2, 1).x));
+    REQUIRE(mover(world, walker)->target.y == Catch::Approx(cellCenter(grid, 2, 1).y));
+}
+
+TEST_CASE("an order keeps walking toward a block for longer than a second") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 5, 1));
+    World world;
+    const Entity walker = create(world);
+    const Entity blocker = create(world);
+    transform(world, walker)->position = cellCenter(grid, 0, 0);
+    mover(world, walker)->order = cellCenter(grid, 4, 0);
+    mover(world, walker)->ordered = true;
+    mover(world, walker)->speed = 0.2f;
+    mover(world, walker)->radius = 0.2f;
+    transform(world, blocker)->position = cellCenter(grid, 2, 0);
+
+    moveSystem(world, grid, 1.5f);
+    REQUIRE(mover(world, walker)->ordered);
+    REQUIRE(transform(world, walker)->position.x == Catch::Approx(0.8f));
+}

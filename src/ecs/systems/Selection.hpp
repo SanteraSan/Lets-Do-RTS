@@ -75,6 +75,7 @@ inline void applyInput(
             }
             selectedMover->order = worldPoint;
             selectedMover->ordered = true;
+            selectedMover->blockedFor = 0.0f;
             steerToOrder(
                 *selectedMover, selectedTransform->layer, selectedTransform->position, grid, taken);
         }
