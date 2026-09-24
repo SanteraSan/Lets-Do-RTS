@@ -43,6 +43,11 @@ void Window::pollEvents(InputFrame& input) {
     input.rightClick = false;
     input.keyWalk = false;
     input.keyRun = false;
+    input.panLeft = false;
+    input.panRight = false;
+    input.panUp = false;
+    input.panDown = false;
+    input.middleDown = false;
 
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
@@ -66,9 +71,18 @@ void Window::pollEvents(InputFrame& input) {
     if (handle != nullptr) {
         int mouseX = 0;
         int mouseY = 0;
-        SDL_GetMouseState(&mouseX, &mouseY);
+        const Uint32 buttons = SDL_GetMouseState(&mouseX, &mouseY);
         input.mouse.x = mouseX;
         input.mouse.y = mouseY;
+        input.middleDown = (buttons & SDL_BUTTON_MMASK) != 0;
+
+        const Uint8* keys = SDL_GetKeyboardState(nullptr);
+        if (keys != nullptr) {
+            input.panLeft = keys[SDL_SCANCODE_LEFT] != 0;
+            input.panRight = keys[SDL_SCANCODE_RIGHT] != 0;
+            input.panUp = keys[SDL_SCANCODE_UP] != 0;
+            input.panDown = keys[SDL_SCANCODE_DOWN] != 0;
+        }
     }
 }
 

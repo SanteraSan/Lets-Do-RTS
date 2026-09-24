@@ -58,6 +58,44 @@ TEST_CASE("screenToWorld rejects a non-positive yScale") {
     REQUIRE(world.y == Catch::Approx(0.0f));
 }
 
+TEST_CASE("panCameraPixels shifts the origin and stays invertible") {
+    Camera camera{};
+    const Vector2 before = camera.origin;
+    panCameraPixels(camera, 10, 0);
+    REQUIRE(camera.origin.x == Catch::Approx(before.x + 0.5f));
+    REQUIRE(camera.origin.y == Catch::Approx(before.y - 0.5f));
+    const Vector2 world = screenToWorld(worldToScreen(Vector2{4.0f, 8.0f}, camera), camera);
+    REQUIRE(world.x == Catch::Approx(4.0f));
+    REQUIRE(world.y == Catch::Approx(8.0f));
+}
+
+TEST_CASE("panCameraPixels ignores a non-positive scale") {
+    Camera camera{};
+    camera.pixelsPerUnit = 0.0f;
+    panCameraPixels(camera, 10, 0);
+    REQUIRE(camera.origin.x == Catch::Approx(0.0f));
+    REQUIRE(camera.origin.y == Catch::Approx(0.0f));
+}
+
+TEST_CASE("arrow directions pan by the given pixel step") {
+    Camera camera{};
+    panCameraDirections(camera, false, true, false, false, 10);
+    REQUIRE(camera.origin.x == Catch::Approx(0.5f));
+    REQUIRE(camera.origin.y == Catch::Approx(-0.5f));
+}
+
+TEST_CASE("middle drag follows the cursor and the first press does not jump") {
+    Camera camera{};
+    CameraDrag drag;
+    dragCamera(camera, drag, true, ScreenPoint{100, 100});
+    REQUIRE(camera.origin.x == Catch::Approx(0.0f));
+    dragCamera(camera, drag, true, ScreenPoint{110, 100});
+    REQUIRE(camera.origin.x == Catch::Approx(-0.5f));
+    REQUIRE(camera.origin.y == Catch::Approx(0.5f));
+    dragCamera(camera, drag, false, ScreenPoint{110, 100});
+    REQUIRE_FALSE(drag.active);
+}
+
 TEST_CASE("worldLengthToPixels scales a positive radius") {
     REQUIRE(worldLengthToPixels(2.0f, Camera{}) == 20);
 }

@@ -42,3 +42,54 @@ inline Vector2 screenToWorld(ScreenPoint screen, Camera camera) {
         camera.origin.x + (along + across) * 0.5f,
         camera.origin.y + (across - along) * 0.5f};
 }
+
+inline void panCameraPixels(Camera& camera, int screenDx, int screenDy) {
+    if (camera.pixelsPerUnit <= 0.0f || camera.yScale <= 0.0f) {
+        return;
+    }
+    if (screenDx == 0 && screenDy == 0) {
+        return;
+    }
+    const ScreenPoint shifted{
+        static_cast<int>(camera.offsetX) + screenDx,
+        static_cast<int>(camera.offsetY) + screenDy};
+    camera.origin = screenToWorld(shifted, camera);
+}
+
+inline void panCameraDirections(Camera& camera, bool left, bool right, bool up, bool down, int pixels) {
+    if (pixels <= 0) {
+        return;
+    }
+    int screenDx = 0;
+    int screenDy = 0;
+    if (left) {
+        screenDx -= pixels;
+    }
+    if (right) {
+        screenDx += pixels;
+    }
+    if (up) {
+        screenDy -= pixels;
+    }
+    if (down) {
+        screenDy += pixels;
+    }
+    panCameraPixels(camera, screenDx, screenDy);
+}
+
+struct CameraDrag {
+    bool active = false;
+    ScreenPoint anchor{};
+};
+
+inline void dragCamera(Camera& camera, CameraDrag& drag, bool middleDown, ScreenPoint mouse) {
+    if (!middleDown) {
+        drag.active = false;
+        return;
+    }
+    if (drag.active) {
+        panCameraPixels(camera, drag.anchor.x - mouse.x, drag.anchor.y - mouse.y);
+    }
+    drag.active = true;
+    drag.anchor = mouse;
+}

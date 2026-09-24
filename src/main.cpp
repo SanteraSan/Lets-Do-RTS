@@ -76,7 +76,8 @@ int main() {
     InputFrame input;
     FixedTimestep step;
     Uint32 lastTicks = SDL_GetTicks();
-    const Camera camera{};
+    Camera camera{};
+    CameraDrag cameraDrag;
 
     while (window.isOpen()) {
         window.pollEvents(input);
@@ -84,6 +85,9 @@ int main() {
             break;
         }
 
+        constexpr int kPanPixels = 12;
+        panCameraDirections(camera, input.panLeft, input.panRight, input.panUp, input.panDown, kPanPixels);
+        dragCamera(camera, cameraDrag, input.middleDown, input.mouse);
         applyInput(world, selection, input, camera, grid);
 
         const Uint32 now = SDL_GetTicks();
