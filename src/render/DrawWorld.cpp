@@ -5,10 +5,45 @@
 #include "render/StandLift.hpp"
 #include "render/UnitCube.hpp"
 
+#include <cmath>
+
 namespace {
 
 ScreenPoint midpoint(ScreenPoint a, ScreenPoint b) {
     return ScreenPoint{(a.x + b.x) / 2, (a.y + b.y) / 2};
+}
+
+void drawPlanarMarker(GlDraw& draw, Vector2 center, Vector2 facing, float radius, float height, float depth, Camera camera) {
+    if (radius <= 0.0f) {
+        return;
+    }
+    constexpr int kSegments = 24;
+    constexpr float kTau = 6.2831853f;
+    Vector2 previous = add(center, Vector2{radius, 0.0f});
+    for (int i = 1; i <= kSegments; ++i) {
+        const float angle = kTau * static_cast<float>(i) / static_cast<float>(kSegments);
+        const Vector2 point{
+            center.x + std::cos(angle) * radius,
+            center.y + std::sin(angle) * radius};
+        draw.line(
+            worldToScreen(previous, height, camera),
+            worldToScreen(point, height, camera),
+            depth,
+            depth,
+            255,
+            255,
+            255);
+        previous = point;
+    }
+    const Vector2 tip = add(center, scale(facing, radius));
+    const Vector2 side{-facing.y, facing.x};
+    const float head = radius * 0.35f;
+    const Vector2 left = add(tip, add(scale(facing, -head), scale(side, head * 0.6f)));
+    const Vector2 right = add(tip, add(scale(facing, -head), scale(side, -head * 0.6f)));
+    const ScreenPoint tipScreen = worldToScreen(tip, height, camera);
+    draw.line(worldToScreen(center, height, camera), tipScreen, depth, depth, 255, 255, 255);
+    draw.line(tipScreen, worldToScreen(left, height, camera), depth, depth, 255, 255, 255);
+    draw.line(tipScreen, worldToScreen(right, height, camera), depth, depth, 255, 255, 255);
 }
 
 int shade(int channel, int delta) {
@@ -90,8 +125,6 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
         const Rgb color = unitColor(world.transforms[i].layer);
         const float feet = standLift(grid, world.transforms[i].position, world.transforms[i].layer);
         const float markerLift = cellSurfaceLift(grid, world.transforms[i].position);
-        const ScreenPoint marker = worldToScreen(world.transforms[i].position, markerLift, camera);
-        const int radiusPixels = worldLengthToPixels(world.movers[i].radius, camera);
         const Vector2 facing = length(world.movers[i].facing) == 0.0f ? Vector2{1.0f, 0.0f}
                                                                        : normalize(world.movers[i].facing);
         const UnitCube cube =
@@ -138,13 +171,15 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
                     shade(color.blue, 48));
             }
         }
-        const float mark = viewDepth(world.transforms[i].position, markerLift, camera);
-        const Vector2 tipWorld =
-            add(world.transforms[i].position, scale(facing, world.movers[i].radius * 1.5f));
-        const ScreenPoint tip = worldToScreen(tipWorld, markerLift, camera);
         if (world.entities[i] == selection.entity) {
-            drawCircle(draw, marker, radiusPixels + 3, mark, 255, 255, 255);
-            drawFacingArrow(draw, marker, tip, radiusPixels, mark, color.red, color.green, color.blue);
+            const float side = world.movers[i].radius * 2.0f;
+            const float ring = grid.cellSize > 0.0f ? grid.cellSize * 0.45f : world.movers[i].radius;
+            float mark = viewDepth(world.transforms[i].position, markerLift, camera);
+            if (world.transforms[i].layer != NavLayer::Air) {
+                mark = viewDepth(world.transforms[i].position, feet + side, camera) +
+                    layerDepthBias(world.transforms[i].layer) - 0.5f;
+            }
+            drawPlanarMarker(draw, world.transforms[i].position, facing, ring, markerLift, mark, camera);
         }
     }
 }
