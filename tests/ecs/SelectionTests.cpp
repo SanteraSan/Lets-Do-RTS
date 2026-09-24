@@ -41,30 +41,88 @@ TEST_CASE("left click selects a unit and click on empty space clears it") {
     InputFrame clickOnUnit;
     clickOnUnit.leftClick = true;
     clickOnUnit.mouse = worldToScreen(Vector2{0.0f, 0.0f}, camera);
-    applyInput(world, selection, clickOnUnit, camera);
+    applyInput(world, selection, clickOnUnit, camera, Grid{});
     REQUIRE(selection.entity == id);
 
     InputFrame clickEmpty;
     clickEmpty.leftClick = true;
     clickEmpty.mouse = worldToScreen(Vector2{50.0f, 50.0f}, camera);
-    applyInput(world, selection, clickEmpty, camera);
+    applyInput(world, selection, clickEmpty, camera, Grid{});
     REQUIRE(selection.entity == kInvalidEntity);
 }
 
-TEST_CASE("right click sets the selected unit target") {
+TEST_CASE("right click on open ground snaps the target to the cell center") {
     World world;
     Selection selection;
     const Entity id = create(world);
     selection.entity = id;
     mover(world, id)->target = Vector2{0.0f, 0.0f};
     const Camera camera{};
+    Grid grid;
+    REQUIRE(makeGrid(grid, 40, 10));
 
     InputFrame order;
     order.rightClick = true;
-    order.mouse = worldToScreen(Vector2{30.0f, 4.0f}, camera);
-    applyInput(world, selection, order, camera);
-    REQUIRE(mover(world, id)->target.x == Catch::Approx(30.0f));
-    REQUIRE(mover(world, id)->target.y == Catch::Approx(4.0f));
+    order.mouse = worldToScreen(Vector2{30.2f, 4.2f}, camera);
+    applyInput(world, selection, order, camera, grid);
+    REQUIRE(mover(world, id)->target.x == Catch::Approx(30.5f));
+    REQUIRE(mover(world, id)->target.y == Catch::Approx(4.5f));
+}
+
+TEST_CASE("right click on a cliff does not move a ground unit") {
+    World world;
+    Selection selection;
+    const Entity id = create(world);
+    selection.entity = id;
+    mover(world, id)->target = Vector2{1.0f, 1.0f};
+    const Camera camera{};
+    Grid grid;
+    REQUIRE(makeGrid(grid, 8, 8));
+    REQUIRE(setHeight(grid, 3, 2, 2));
+
+    InputFrame order;
+    order.rightClick = true;
+    order.mouse = worldToScreen(cellCenter(grid, 3, 2), camera);
+    applyInput(world, selection, order, camera, grid);
+    REQUIRE(mover(world, id)->target.x == Catch::Approx(1.0f));
+    REQUIRE(mover(world, id)->target.y == Catch::Approx(1.0f));
+}
+
+TEST_CASE("right click on a cliff sends an air unit to the cell center") {
+    World world;
+    Selection selection;
+    const Entity id = create(world);
+    selection.entity = id;
+    transform(world, id)->layer = NavLayer::Air;
+    mover(world, id)->target = Vector2{0.0f, 0.0f};
+    const Camera camera{};
+    Grid grid;
+    REQUIRE(makeGrid(grid, 8, 8));
+    REQUIRE(setHeight(grid, 3, 2, 2));
+
+    InputFrame order;
+    order.rightClick = true;
+    order.mouse = worldToScreen(Vector2{3.1f, 2.1f}, camera);
+    applyInput(world, selection, order, camera, grid);
+    REQUIRE(mover(world, id)->target.x == Catch::Approx(3.5f));
+    REQUIRE(mover(world, id)->target.y == Catch::Approx(2.5f));
+}
+
+TEST_CASE("right click outside the grid leaves the target") {
+    World world;
+    Selection selection;
+    const Entity id = create(world);
+    selection.entity = id;
+    mover(world, id)->target = Vector2{1.0f, 1.0f};
+    const Camera camera{};
+    Grid grid;
+    REQUIRE(makeGrid(grid, 4, 4));
+
+    InputFrame order;
+    order.rightClick = true;
+    order.mouse = worldToScreen(Vector2{20.0f, 20.0f}, camera);
+    applyInput(world, selection, order, camera, grid);
+    REQUIRE(mover(world, id)->target.x == Catch::Approx(1.0f));
 }
 
 TEST_CASE("right click does nothing without a selection") {
@@ -77,7 +135,7 @@ TEST_CASE("right click does nothing without a selection") {
     InputFrame order;
     order.rightClick = true;
     order.mouse = worldToScreen(Vector2{30.0f, 0.0f}, camera);
-    applyInput(world, selection, order, camera);
+    applyInput(world, selection, order, camera, Grid{});
     REQUIRE(mover(world, id)->target.x == Catch::Approx(1.0f));
 }
 
@@ -90,7 +148,7 @@ TEST_CASE("speed keys do nothing without a selection") {
 
     InputFrame walk;
     walk.keyWalk = true;
-    applyInput(world, selection, walk, camera);
+    applyInput(world, selection, walk, camera, Grid{});
     REQUIRE(mover(world, id)->speed == Catch::Approx(10.0f));
 }
 
@@ -104,11 +162,11 @@ TEST_CASE("keys 1 and 2 change selected unit speed") {
 
     InputFrame walk;
     walk.keyWalk = true;
-    applyInput(world, selection, walk, camera);
+    applyInput(world, selection, walk, camera, Grid{});
     REQUIRE(mover(world, id)->speed == Catch::Approx(kWalkSpeed));
 
     InputFrame run;
     run.keyRun = true;
-    applyInput(world, selection, run, camera);
+    applyInput(world, selection, run, camera, Grid{});
     REQUIRE(mover(world, id)->speed == Catch::Approx(kRunSpeed));
 }

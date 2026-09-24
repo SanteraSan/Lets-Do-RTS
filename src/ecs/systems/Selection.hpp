@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/World.hpp"
+#include "nav/Grid.hpp"
 #include "platform/Input.hpp"
 
 struct Selection {
@@ -20,7 +21,8 @@ inline Entity hitUnit(const World& world, Vector2 worldPoint) {
     return kInvalidEntity;
 }
 
-inline void applyInput(World& world, Selection& selection, const InputFrame& input, Camera camera) {
+inline void applyInput(
+    World& world, Selection& selection, const InputFrame& input, Camera camera, const Grid& grid) {
     const Vector2 worldPoint = screenToWorld(input.mouse, camera);
 
     if (input.leftClick) {
@@ -29,8 +31,13 @@ inline void applyInput(World& world, Selection& selection, const InputFrame& inp
 
     if (input.rightClick) {
         Mover* selectedMover = mover(world, selection.entity);
-        if (selectedMover != nullptr) {
-            selectedMover->target = worldPoint;
+        Transform* selectedTransform = transform(world, selection.entity);
+        int cellX = 0;
+        int cellY = 0;
+        if (selectedMover != nullptr && selectedTransform != nullptr &&
+            worldToCell(grid, worldPoint, cellX, cellY) &&
+            canOccupyCell(grid, selectedTransform->layer, cellX, cellY)) {
+            selectedMover->target = cellCenter(grid, cellX, cellY);
         }
     }
 

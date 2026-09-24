@@ -1,5 +1,6 @@
 #include "nav/Grid.hpp"
 
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <limits>
 
@@ -71,6 +72,47 @@ TEST_CASE("a negative height cannot be occupied yet") {
     REQUIRE_FALSE(canOccupy(NavLayer::Ground, Tile{-1}));
     REQUIRE_FALSE(canOccupy(NavLayer::Air, Tile{-1}));
     REQUIRE_FALSE(canOccupy(NavLayer::Underwater, Tile{-1}));
+}
+
+TEST_CASE("worldToCell maps a point to the cell that contains it") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 4, 4));
+    int x = -1;
+    int y = -1;
+    REQUIRE(worldToCell(grid, Vector2{1.9f, 0.0f}, x, y));
+    REQUIRE(x == 1);
+    REQUIRE(y == 0);
+    REQUIRE(worldToCell(grid, Vector2{2.0f, 3.1f}, x, y));
+    REQUIRE(x == 2);
+    REQUIRE(y == 3);
+}
+
+TEST_CASE("worldToCell rejects a point outside the grid") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 2, 2));
+    int x = 0;
+    int y = 0;
+    REQUIRE_FALSE(worldToCell(grid, Vector2{-0.1f, 0.0f}, x, y));
+    REQUIRE_FALSE(worldToCell(grid, Vector2{2.0f, 0.0f}, x, y));
+    REQUIRE_FALSE(worldToCell(grid, Vector2{0.0f, 2.0f}, x, y));
+}
+
+TEST_CASE("worldToCell rejects a non-positive cell size") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 2, 2));
+    grid.cellSize = 0.0f;
+    int x = 0;
+    int y = 0;
+    REQUIRE_FALSE(worldToCell(grid, Vector2{0.5f, 0.5f}, x, y));
+}
+
+TEST_CASE("cellCenter is the middle of the cell") {
+    Grid grid;
+    grid.cellSize = 4.0f;
+    grid.origin = Vector2{-8.0f, 2.0f};
+    const Vector2 center = cellCenter(grid, 1, 0);
+    REQUIRE(center.x == Catch::Approx(-2.0f));
+    REQUIRE(center.y == Catch::Approx(4.0f));
 }
 
 TEST_CASE("a cell outside the grid cannot be occupied") {

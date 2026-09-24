@@ -3,6 +3,7 @@
 #include "ecs/World.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/Selection.hpp"
+#include "nav/Grid.hpp"
 #include "platform/Camera.hpp"
 #include "platform/DebugDraw.hpp"
 #include "platform/Window.hpp"
@@ -45,6 +46,15 @@ int main() {
     mover(world, tanker)->target = Vector2{0.0f, 12.0f};
     mover(world, tanker)->speed = 6.0f;
     mover(world, tanker)->radius = 3.5f;
+    transform(world, tanker)->layer = NavLayer::Air;
+
+    Grid grid;
+    makeGrid(grid, 40, 24);
+    grid.origin = Vector2{-24.0f, -40.0f};
+    grid.cellSize = 4.0f;
+    for (int y = 0; y < grid.height; ++y) {
+        setHeight(grid, 10, y, 2);
+    }
 
     Selection selection;
     InputFrame input;
@@ -58,7 +68,7 @@ int main() {
             break;
         }
 
-        applyInput(world, selection, input, camera);
+        applyInput(world, selection, input, camera, grid);
 
         const Uint32 now = SDL_GetTicks();
         const float rawSeconds = static_cast<float>(now - lastTicks) / 1000.0f;

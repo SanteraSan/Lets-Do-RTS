@@ -12,6 +12,8 @@ struct Tile {
 struct Grid {
     int width = 0;
     int height = 0;
+    float cellSize = 1.0f;
+    Vector2 origin{};
     std::vector<Tile> tiles;
 };
 
@@ -65,6 +67,29 @@ inline bool canOccupy(NavLayer layer, Tile tile) {
         return layer == NavLayer::Air;
     }
     return layer == NavLayer::Ground || layer == NavLayer::Air;
+}
+
+inline bool worldToCell(const Grid& grid, Vector2 world, int& cellX, int& cellY) {
+    if (grid.cellSize <= 0.0f) {
+        return false;
+    }
+    const float localX = (world.x - grid.origin.x) / grid.cellSize;
+    const float localY = (world.y - grid.origin.y) / grid.cellSize;
+    if (localX < 0.0f || localY < 0.0f) {
+        return false;
+    }
+    if (localX >= static_cast<float>(grid.width) || localY >= static_cast<float>(grid.height)) {
+        return false;
+    }
+    cellX = static_cast<int>(localX);
+    cellY = static_cast<int>(localY);
+    return cellIndex(grid, cellX, cellY) >= 0;
+}
+
+inline Vector2 cellCenter(const Grid& grid, int x, int y) {
+    return Vector2{
+        grid.origin.x + (static_cast<float>(x) + 0.5f) * grid.cellSize,
+        grid.origin.y + (static_cast<float>(y) + 0.5f) * grid.cellSize};
 }
 
 inline bool canOccupyCell(const Grid& grid, NavLayer layer, int x, int y) {
