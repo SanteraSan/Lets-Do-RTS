@@ -10,6 +10,8 @@ struct Tile {
     bool bridge = false;
     bool walkable = false;
     bool ramp = false;
+    bool cave = false;
+    bool blocked = false;
 };
 
 struct Grid {
@@ -75,6 +77,8 @@ inline bool setPlateau(Grid& grid, int x, int y, int height) {
     tile.walkable = true;
     tile.ramp = false;
     tile.bridge = false;
+    tile.cave = false;
+    tile.blocked = false;
     return true;
 }
 
@@ -91,28 +95,73 @@ inline bool setRamp(Grid& grid, int x, int y, int height) {
     tile.ramp = true;
     tile.walkable = false;
     tile.bridge = false;
+    tile.cave = false;
+    tile.blocked = false;
     return true;
 }
 
-inline bool setBridge(Grid& grid, int x, int y) {
+inline bool setBridge(Grid& grid, int x, int y, int height = 0) {
+    if (height < 0) {
+        return false;
+    }
     const int index = cellIndex(grid, x, y);
     if (index < 0) {
         return false;
     }
     Tile& tile = grid.tiles[static_cast<std::size_t>(index)];
     tile.bridge = true;
-    tile.height = 0;
+    tile.height = height;
+    tile.walkable = false;
+    tile.ramp = false;
+    tile.cave = false;
+    tile.blocked = false;
+    return true;
+}
+
+inline bool setCave(Grid& grid, int x, int y, int height) {
+    if (height <= 0) {
+        return false;
+    }
+    const int index = cellIndex(grid, x, y);
+    if (index < 0) {
+        return false;
+    }
+    Tile& tile = grid.tiles[static_cast<std::size_t>(index)];
+    tile.cave = true;
+    tile.height = height;
+    tile.bridge = false;
+    tile.walkable = false;
+    tile.ramp = false;
+    tile.blocked = false;
+    return true;
+}
+
+inline bool setBlocked(Grid& grid, int x, int y) {
+    const int index = cellIndex(grid, x, y);
+    if (index < 0) {
+        return false;
+    }
+    Tile& tile = grid.tiles[static_cast<std::size_t>(index)];
+    tile.blocked = true;
+    tile.bridge = false;
+    tile.cave = false;
     tile.walkable = false;
     tile.ramp = false;
     return true;
 }
 
 inline bool canOccupy(NavLayer layer, Tile tile) {
+    if (tile.blocked) {
+        return false;
+    }
     if (tile.bridge) {
         return layer == NavLayer::Ground || layer == NavLayer::Underwater || layer == NavLayer::Air;
     }
-    if (tile.height < 0) {
+    if (tile.cave) {
         return layer == NavLayer::Underwater || layer == NavLayer::Air;
+    }
+    if (tile.height < 0) {
+        return layer == NavLayer::Underwater || layer == NavLayer::Surface || layer == NavLayer::Air;
     }
     if (tile.ramp || tile.walkable) {
         return layer == NavLayer::Ground || layer == NavLayer::Air;

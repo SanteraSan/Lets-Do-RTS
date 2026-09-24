@@ -52,6 +52,37 @@ TEST_CASE("approachOrder lets ground cross a cliff by a ramp and a plateau") {
     REQUIRE(y == 1);
 }
 
+TEST_CASE("approachOrder lets underwater pass a cave and stops a surface boat") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 8, 3));
+    for (int x = 0; x < grid.width; ++x) {
+        REQUIRE(setHeight(grid, x, 1, -1));
+    }
+    REQUIRE(setCave(grid, 3, 1, 2));
+    int x = -1;
+    int y = -1;
+    REQUIRE(approachOrder(grid, NavLayer::Underwater, Vector2{0.2f, 1.2f}, Vector2{6.2f, 1.2f}, x, y));
+    REQUIRE(x == 6);
+    REQUIRE(y == 1);
+    REQUIRE(approachOrder(grid, NavLayer::Surface, Vector2{0.2f, 1.2f}, Vector2{6.2f, 1.2f}, x, y));
+    REQUIRE(x == 2);
+    REQUIRE(y == 1);
+}
+
+TEST_CASE("approachOrder lets ground cross a raised bridge between plateaus") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 3, 5));
+    REQUIRE(setPlateau(grid, 1, 0, 1));
+    REQUIRE(setPlateau(grid, 1, 2, 1));
+    REQUIRE(setHeight(grid, 1, 1, -1));
+    REQUIRE(setBridge(grid, 1, 1, 1));
+    int x = -1;
+    int y = -1;
+    REQUIRE(approachOrder(grid, NavLayer::Ground, Vector2{1.2f, 0.2f}, Vector2{1.2f, 2.2f}, x, y));
+    REQUIRE(x == 1);
+    REQUIRE(y == 2);
+}
+
 TEST_CASE("approachOrder lets an air unit reach a cell past the cliff") {
     Grid grid;
     REQUIRE(makeGrid(grid, 8, 4));

@@ -73,6 +73,16 @@ int main() {
     for (int x = 3; x <= 7; ++x) {
         setBridge(grid, x, 18);
     }
+    setCave(grid, 10, 18, 2);
+    setBridge(grid, 11, 18, 1);
+    setBridge(grid, 12, 18, 1);
+
+    const Entity boat = create(world);
+    transform(world, boat)->layer = NavLayer::Surface;
+    transform(world, boat)->position = cellCenter(grid, 1, 18);
+    mover(world, boat)->target = transform(world, boat)->position;
+    mover(world, boat)->speed = 8.0f;
+    mover(world, boat)->radius = 1.8f;
 
     const Entity sub = create(world);
     transform(world, sub)->layer = NavLayer::Underwater;

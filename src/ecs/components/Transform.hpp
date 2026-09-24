@@ -2,7 +2,7 @@
 
 #include "math/Vector2.hpp"
 
-enum class NavLayer { Underwater, Ground, Air };
+enum class NavLayer { Underwater, Ground, Air, Surface };
 
 struct Transform {
     Vector2 position{};

@@ -100,6 +100,30 @@ TEST_CASE("a bridge can be occupied by ground, underwater, and air") {
     REQUIRE(canOccupy(NavLayer::Ground, bridge));
     REQUIRE(canOccupy(NavLayer::Underwater, bridge));
     REQUIRE(canOccupy(NavLayer::Air, bridge));
+    REQUIRE_FALSE(canOccupy(NavLayer::Surface, bridge));
+}
+
+TEST_CASE("clear water lets a surface boat through and keeps ground out") {
+    const Tile water{-1, false};
+    REQUIRE(canOccupy(NavLayer::Surface, water));
+    REQUIRE(canOccupy(NavLayer::Underwater, water));
+    REQUIRE_FALSE(canOccupy(NavLayer::Ground, water));
+}
+
+TEST_CASE("a cave lets underwater and air through") {
+    const Tile cave{2, false, false, false, true, false};
+    REQUIRE(canOccupy(NavLayer::Underwater, cave));
+    REQUIRE(canOccupy(NavLayer::Air, cave));
+    REQUIRE_FALSE(canOccupy(NavLayer::Ground, cave));
+    REQUIRE_FALSE(canOccupy(NavLayer::Surface, cave));
+}
+
+TEST_CASE("a blocked cell rejects every layer") {
+    const Tile blocked{0, false, false, false, false, true};
+    REQUIRE_FALSE(canOccupy(NavLayer::Ground, blocked));
+    REQUIRE_FALSE(canOccupy(NavLayer::Air, blocked));
+    REQUIRE_FALSE(canOccupy(NavLayer::Underwater, blocked));
+    REQUIRE_FALSE(canOccupy(NavLayer::Surface, blocked));
 }
 
 TEST_CASE("setBridge opens a cell for every layer and rejects an outside cell") {

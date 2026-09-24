@@ -40,8 +40,15 @@ TEST_CASE("a bridge is water with a ground deck") {
     REQUIRE(look.deckFill.green == 36);
 }
 
+TEST_CASE("a cave is drawn darker than open water") {
+    const TileAppearance cave = tileAppearance(Tile{2, false, false, false, true, false});
+    REQUIRE(cave.fill.blue == 88);
+    REQUIRE_FALSE(cave.deck);
+}
+
 TEST_CASE("unit color follows the navigation layer") {
     REQUIRE(unitColor(NavLayer::Ground).red == 220);
     REQUIRE(unitColor(NavLayer::Air).blue == 220);
     REQUIRE(unitColor(NavLayer::Underwater).blue == 255);
+    REQUIRE(unitColor(NavLayer::Surface).green == 230);
 }

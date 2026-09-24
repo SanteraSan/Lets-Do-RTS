@@ -16,6 +16,12 @@ struct TileAppearance {
 };
 
 inline TileAppearance tileAppearance(Tile tile) {
+    if (tile.blocked) {
+        return TileAppearance{Rgb{12, 12, 16}, false, {}};
+    }
+    if (tile.cave) {
+        return TileAppearance{Rgb{36, 44, 88}, false, {}};
+    }
     if (tile.bridge) {
         return TileAppearance{Rgb{20, 70, 120}, true, Rgb{24, 36, 44}};
     }
@@ -40,6 +46,9 @@ inline Rgb unitColor(NavLayer layer) {
     }
     if (layer == NavLayer::Underwater) {
         return Rgb{80, 140, 255};
+    }
+    if (layer == NavLayer::Surface) {
+        return Rgb{190, 230, 210};
     }
     return Rgb{220, 220, 80};
 }
