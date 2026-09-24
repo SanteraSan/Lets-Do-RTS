@@ -2,6 +2,7 @@
 
 #include "platform/DebugDraw.hpp"
 #include "render/Appearance.hpp"
+#include "render/StandLift.hpp"
 #include "render/UnitCube.hpp"
 
 namespace {
@@ -31,7 +32,7 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
             const float y0 = grid.origin.y + static_cast<float>(y) * grid.cellSize;
             const float x1 = x0 + grid.cellSize;
             const float y1 = y0 + grid.cellSize;
-            const float lift = tile->height > 0 ? static_cast<float>(tile->height) * grid.cellSize * 0.5f : 0.0f;
+            const float lift = surfaceLift(tile->height, grid.cellSize);
             const ScreenPoint top = worldToScreen(Vector2{x0, y0}, lift, camera);
             const ScreenPoint right = worldToScreen(Vector2{x1, y0}, lift, camera);
             const ScreenPoint bottom = worldToScreen(Vector2{x1, y1}, lift, camera);
@@ -67,7 +68,8 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
 
     for (std::size_t i = 0; i < world.entities.size(); ++i) {
         const Rgb color = unitColor(world.transforms[i].layer);
-        const ScreenPoint screen = worldToScreen(world.transforms[i].position, camera);
+        const float feet = standLift(grid, world.transforms[i].position, world.transforms[i].layer);
+        const ScreenPoint screen = worldToScreen(world.transforms[i].position, feet, camera);
         const int radiusPixels = worldLengthToPixels(world.movers[i].radius, camera);
         const Vector2 facing = length(world.movers[i].facing) == 0.0f ? Vector2{1.0f, 0.0f}
                                                                        : normalize(world.movers[i].facing);
@@ -76,10 +78,10 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
         for (int faceIndex = 0; faceIndex < cube.count; ++faceIndex) {
             const CubeFace& face = cube.faces[faceIndex];
             const int delta = face.front ? 48 : (face.top ? 0 : -48);
-            const ScreenPoint a = worldToScreen(face.corner[0].position, face.corner[0].height, camera);
-            const ScreenPoint b = worldToScreen(face.corner[1].position, face.corner[1].height, camera);
-            const ScreenPoint c = worldToScreen(face.corner[2].position, face.corner[2].height, camera);
-            const ScreenPoint d = worldToScreen(face.corner[3].position, face.corner[3].height, camera);
+            const ScreenPoint a = worldToScreen(face.corner[0].position, face.corner[0].height + feet, camera);
+            const ScreenPoint b = worldToScreen(face.corner[1].position, face.corner[1].height + feet, camera);
+            const ScreenPoint c = worldToScreen(face.corner[2].position, face.corner[2].height + feet, camera);
+            const ScreenPoint d = worldToScreen(face.corner[3].position, face.corner[3].height + feet, camera);
             drawQuad(draw, a, b, c, d, shade(color.red, delta), shade(color.green, delta), shade(color.blue, delta));
             if (face.top) {
                 drawQuad(
@@ -95,7 +97,8 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
         }
         const Vector2 tipWorld =
             add(world.transforms[i].position, scale(facing, world.movers[i].radius * 1.5f));
-        drawFacingArrow(draw, screen, worldToScreen(tipWorld, camera), radiusPixels, color.red, color.green, color.blue);
+        drawFacingArrow(
+            draw, screen, worldToScreen(tipWorld, feet, camera), radiusPixels, color.red, color.green, color.blue);
 
         if (world.entities[i] == selection.entity) {
             drawCircle(draw, screen, radiusPixels + 3, 255, 255, 255);
