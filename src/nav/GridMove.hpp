@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nav/Grid.hpp"
+#include "nav/Path.hpp"
 #include "math/MoveTowards.hpp"
 
 inline void clampInsideCell(const Grid& grid, int cellX, int cellY, Vector2& position) {
@@ -22,7 +23,13 @@ inline void clampInsideCell(const Grid& grid, int cellX, int cellY, Vector2& pos
 }
 
 inline void moveOnGrid(
-    Vector2& position, Vector2 target, NavLayer layer, const Grid& grid, float speed, float dt) {
+    Vector2& position,
+    Vector2 target,
+    NavLayer layer,
+    const Grid& grid,
+    float speed,
+    float dt,
+    const std::vector<PathCell>* taken = nullptr) {
     if (speed <= 0.0f || dt <= 0.0f || grid.cellSize <= 0.0f) {
         return;
     }
@@ -50,7 +57,7 @@ inline void moveOnGrid(
     const int spanX = nextX > fromX ? nextX - fromX : fromX - nextX;
     const int spanY = nextY > fromY ? nextY - fromY : fromY - nextY;
     if (spanX <= 1 && spanY <= 1) {
-        if (canStepCell(grid, layer, fromX, fromY, nextX, nextY)) {
+        if (canStepCell(grid, layer, fromX, fromY, nextX, nextY) && !cellTaken(taken, nextX, nextY)) {
             position = next;
             return;
         }
@@ -61,7 +68,8 @@ inline void moveOnGrid(
 
     const int stepX = nextX > fromX ? 1 : (nextX < fromX ? -1 : 0);
     const int stepY = nextY > fromY ? 1 : (nextY < fromY ? -1 : 0);
-    if (canStepCell(grid, layer, fromX, fromY, fromX + stepX, fromY + stepY)) {
+    if (canStepCell(grid, layer, fromX, fromY, fromX + stepX, fromY + stepY) &&
+        !cellTaken(taken, fromX + stepX, fromY + stepY)) {
         clampInsideCell(grid, fromX + stepX, fromY + stepY, next);
     } else {
         clampInsideCell(grid, fromX, fromY, next);

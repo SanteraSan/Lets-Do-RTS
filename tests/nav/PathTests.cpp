@@ -1,4 +1,5 @@
 #include "nav/Path.hpp"
+#include "nav/UnitBlock.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -75,4 +76,71 @@ TEST_CASE("findPath crosses the plateau straight to the ramp") {
         }
     }
     REQUIRE(crossed);
+}
+
+TEST_CASE("layers block only another unit on the same plane") {
+    REQUIRE(layersBlock(NavLayer::Ground, NavLayer::Ground));
+    REQUIRE(layersBlock(NavLayer::Surface, NavLayer::Surface));
+    REQUIRE(layersBlock(NavLayer::Underwater, NavLayer::Underwater));
+    REQUIRE_FALSE(layersBlock(NavLayer::Surface, NavLayer::Underwater));
+    REQUIRE_FALSE(layersBlock(NavLayer::Underwater, NavLayer::Surface));
+    REQUIRE_FALSE(layersBlock(NavLayer::Air, NavLayer::Ground));
+    REQUIRE_FALSE(layersBlock(NavLayer::Ground, NavLayer::Air));
+}
+
+TEST_CASE("findPath walks around another ground unit") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 5, 3));
+    const std::vector<PathCell> taken{PathCell{2, 1}};
+    const std::vector<PathCell> path = findPath(grid, NavLayer::Ground, 0, 1, 4, 1, &taken);
+    REQUIRE(path.back().x == 4);
+    REQUIRE(path.back().y == 1);
+    for (const PathCell& cell : path) {
+        REQUIRE((cell.x != 2 || cell.y != 1));
+    }
+}
+
+TEST_CASE("a boat and a sub do not block each other") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 5, 1));
+    for (int x = 0; x < grid.width; ++x) {
+        REQUIRE(setHeight(grid, x, 0, -1));
+    }
+    World world;
+    const Entity boat = create(world);
+    const Entity sub = create(world);
+    transform(world, boat)->layer = NavLayer::Surface;
+    transform(world, boat)->position = cellCenter(grid, 2, 0);
+    transform(world, sub)->layer = NavLayer::Underwater;
+    transform(world, sub)->position = cellCenter(grid, 2, 0);
+
+    std::vector<PathCell> taken;
+    blockingCells(world, static_cast<std::size_t>(indexOf(world, boat)), NavLayer::Surface, grid, taken);
+    REQUIRE(taken.empty());
+    const std::vector<PathCell> path = findPath(grid, NavLayer::Surface, 0, 0, 4, 0, &taken);
+    REQUIRE(path.back().x == 4);
+
+    blockingCells(world, static_cast<std::size_t>(indexOf(world, sub)), NavLayer::Underwater, grid, taken);
+    REQUIRE(taken.empty());
+}
+
+TEST_CASE("another boat blocks a surface path") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 5, 1));
+    for (int x = 0; x < grid.width; ++x) {
+        REQUIRE(setHeight(grid, x, 0, -1));
+    }
+    World world;
+    const Entity self = create(world);
+    const Entity other = create(world);
+    transform(world, self)->layer = NavLayer::Surface;
+    transform(world, self)->position = cellCenter(grid, 0, 0);
+    transform(world, other)->layer = NavLayer::Surface;
+    transform(world, other)->position = cellCenter(grid, 2, 0);
+
+    std::vector<PathCell> taken;
+    blockingCells(world, static_cast<std::size_t>(indexOf(world, self)), NavLayer::Surface, grid, taken);
+    REQUIRE(taken.size() == 1);
+    const std::vector<PathCell> path = findPath(grid, NavLayer::Surface, 0, 0, 4, 0, &taken);
+    REQUIRE(path.back().x == 1);
 }

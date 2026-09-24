@@ -27,7 +27,26 @@ inline float pathStepCost(int fromX, int fromY, int toX, int toY) {
     return 1.0f;
 }
 
-inline std::vector<PathCell> findPath(const Grid& grid, NavLayer layer, int startX, int startY, int goalX, int goalY) {
+inline bool cellTaken(const std::vector<PathCell>* taken, int x, int y) {
+    if (taken == nullptr) {
+        return false;
+    }
+    for (const PathCell& cell : *taken) {
+        if (cell.x == x && cell.y == y) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline std::vector<PathCell> findPath(
+    const Grid& grid,
+    NavLayer layer,
+    int startX,
+    int startY,
+    int goalX,
+    int goalY,
+    const std::vector<PathCell>* taken = nullptr) {
     std::vector<PathCell> empty;
     if (tileAt(grid, startX, startY) == nullptr || tileAt(grid, goalX, goalY) == nullptr) {
         return empty;
@@ -91,7 +110,7 @@ inline std::vector<PathCell> findPath(const Grid& grid, NavLayer layer, int star
         for (const auto& offset : offsets) {
             const int nextX = current.x + offset[0];
             const int nextY = current.y + offset[1];
-            if (!canStepCell(grid, layer, current.x, current.y, nextX, nextY)) {
+            if (!canStepCell(grid, layer, current.x, current.y, nextX, nextY) || cellTaken(taken, nextX, nextY)) {
                 continue;
             }
             const int nextIndex = indexOf(nextX, nextY);
@@ -133,7 +152,12 @@ inline std::vector<PathCell> findPath(const Grid& grid, NavLayer layer, int star
 }
 
 inline std::vector<Vector2> pathTargets(
-    const Grid& grid, NavLayer layer, Vector2 from, Vector2 to, float radius) {
+    const Grid& grid,
+    NavLayer layer,
+    Vector2 from,
+    Vector2 to,
+    float radius,
+    const std::vector<PathCell>* taken = nullptr) {
     int startX = 0;
     int startY = 0;
     int goalX = 0;
@@ -141,7 +165,7 @@ inline std::vector<Vector2> pathTargets(
     if (!worldToCell(grid, from, startX, startY) || !worldToCell(grid, to, goalX, goalY)) {
         return {};
     }
-    const std::vector<PathCell> path = findPath(grid, layer, startX, startY, goalX, goalY);
+    const std::vector<PathCell> path = findPath(grid, layer, startX, startY, goalX, goalY, taken);
     std::vector<Vector2> points;
     if (path.empty()) {
         return points;

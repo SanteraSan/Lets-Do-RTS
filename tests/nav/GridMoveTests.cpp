@@ -103,6 +103,19 @@ TEST_CASE("moveOnGrid lets a ground unit enter a bridge") {
     REQUIRE(cellY == 1);
 }
 
+TEST_CASE("moveOnGrid stops before a cell held by another unit") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 4, 1));
+    Vector2 position = cellCenter(grid, 0, 0);
+    const std::vector<PathCell> taken{PathCell{1, 0}};
+    moveOnGrid(position, cellCenter(grid, 3, 0), NavLayer::Ground, grid, 10.0f, 1.0f, &taken);
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, position, cellX, cellY));
+    REQUIRE(cellX == 0);
+    REQUIRE(cellY == 0);
+}
+
 TEST_CASE("moveOnGrid ignores a non-positive speed") {
     Grid grid;
     REQUIRE(makeGrid(grid, 4, 4));
