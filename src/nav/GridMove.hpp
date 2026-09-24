@@ -35,33 +35,34 @@ inline void moveOnGrid(
     Vector2 next = position;
     moveTowards(next, target, speed, dt);
 
-    int towardX = fromX;
-    int towardY = fromY;
-    if (target.x > position.x) {
-        towardX = fromX + 1;
-    } else if (target.x < position.x) {
-        towardX = fromX - 1;
-    }
-    if (target.y > position.y) {
-        towardY = fromY + 1;
-    } else if (target.y < position.y) {
-        towardY = fromY - 1;
-    }
-    const bool neighborOpen =
-        (towardX != fromX || towardY != fromY) && canOccupyCell(grid, layer, towardX, towardY);
-
     int nextX = 0;
     int nextY = 0;
-    if (worldToCell(grid, next, nextX, nextY) && nextX == fromX && nextY == fromY) {
+    if (!worldToCell(grid, next, nextX, nextY)) {
+        clampInsideCell(grid, fromX, fromY, next);
         position = next;
         return;
     }
-    if (worldToCell(grid, next, nextX, nextY) && neighborOpen && nextX == towardX && nextY == towardY) {
+    if (nextX == fromX && nextY == fromY) {
         position = next;
         return;
     }
-    if (neighborOpen) {
-        clampInsideCell(grid, towardX, towardY, next);
+
+    const int spanX = nextX > fromX ? nextX - fromX : fromX - nextX;
+    const int spanY = nextY > fromY ? nextY - fromY : fromY - nextY;
+    if (spanX <= 1 && spanY <= 1) {
+        if (canOccupyCell(grid, layer, nextX, nextY)) {
+            position = next;
+            return;
+        }
+        clampInsideCell(grid, fromX, fromY, next);
+        position = next;
+        return;
+    }
+
+    const int stepX = nextX > fromX ? 1 : (nextX < fromX ? -1 : 0);
+    const int stepY = nextY > fromY ? 1 : (nextY < fromY ? -1 : 0);
+    if (canOccupyCell(grid, layer, fromX + stepX, fromY + stepY)) {
+        clampInsideCell(grid, fromX + stepX, fromY + stepY, next);
     } else {
         clampInsideCell(grid, fromX, fromY, next);
     }

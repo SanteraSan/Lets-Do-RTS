@@ -54,3 +54,26 @@ TEST_CASE("moveSystem advances every entity toward its target") {
     REQUIRE(transform(world, b)->position.x == Catch::Approx(0.6f));
     REQUIRE(mover(world, a)->facing.x == Catch::Approx(1.0f));
 }
+
+TEST_CASE("moveSystem keeps facing still when a ground unit is stopped at a cliff") {
+    World world;
+    const Entity id = create(world);
+    transform(world, id)->position = Vector2{1.999f, 1.2f};
+    mover(world, id)->target = Vector2{6.0f, 1.2f};
+    mover(world, id)->speed = 10.0f;
+    mover(world, id)->facing = Vector2{1.0f, 0.0f};
+    Grid grid;
+    REQUIRE(makeGrid(grid, 8, 4));
+    REQUIRE(setHeight(grid, 2, 1, 3));
+
+    for (int i = 0; i < 8; ++i) {
+        moveSystem(world, grid, 1.0f / 60.0f);
+    }
+
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, transform(world, id)->position, cellX, cellY));
+    REQUIRE(cellX == 1);
+    REQUIRE(mover(world, id)->facing.x == Catch::Approx(1.0f));
+    REQUIRE(mover(world, id)->facing.y == Catch::Approx(0.0f));
+}

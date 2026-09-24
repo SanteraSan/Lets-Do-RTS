@@ -50,6 +50,19 @@ TEST_CASE("moveOnGrid lets an air unit enter a cliff cell") {
     REQUIRE(cellY == 1);
 }
 
+TEST_CASE("moveOnGrid keeps a step that enters the side cell") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 8, 4));
+    Vector2 position{0.9f, 0.2f};
+    moveOnGrid(position, Vector2{3.0f, 0.8f}, NavLayer::Ground, grid, 1.0f, 0.2f);
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, position, cellX, cellY));
+    REQUIRE(cellX == 1);
+    REQUIRE(cellY == 0);
+    REQUIRE(position.y == Catch::Approx(0.254944f).margin(0.001f));
+}
+
 TEST_CASE("moveOnGrid ignores a non-positive speed") {
     Grid grid;
     REQUIRE(makeGrid(grid, 4, 4));

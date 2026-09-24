@@ -10,7 +10,7 @@ inline void moveSystem(World& world, const Grid& grid, float dt) {
         const Vector2 previous = t.position;
         moveOnGrid(t.position, m.target, t.layer, grid, m.speed, dt);
         const Vector2 delta = sub(t.position, previous);
-        if (length(delta) > 0.0f) {
+        if (length(delta) > 0.001f) {
             m.facing = normalize(delta);
         }
     }
