@@ -69,13 +69,14 @@ TEST_CASE("right click on open ground snaps the target to the cell center") {
     REQUIRE(mover(world, id)->target.y == Catch::Approx(4.5f));
 }
 
-TEST_CASE("right click past a cliff stops a ground unit on the cell in front") {
+TEST_CASE("right click past a cliff stops a ground unit against the cliff") {
     World world;
     Selection selection;
     const Entity id = create(world);
     selection.entity = id;
     transform(world, id)->position = Vector2{0.2f, 1.2f};
     mover(world, id)->target = Vector2{0.0f, 0.0f};
+    mover(world, id)->radius = 0.2f;
     const Camera camera{};
     Grid grid;
     REQUIRE(makeGrid(grid, 8, 4));
@@ -87,7 +88,7 @@ TEST_CASE("right click past a cliff stops a ground unit on the cell in front") {
     order.rightClick = true;
     order.mouse = worldToScreen(Vector2{6.2f, 1.2f}, camera);
     applyInput(world, selection, order, camera, grid);
-    REQUIRE(mover(world, id)->target.x == Catch::Approx(2.5f));
+    REQUIRE(mover(world, id)->target.x == Catch::Approx(2.8f));
     REQUIRE(mover(world, id)->target.y == Catch::Approx(1.5f));
 }
 

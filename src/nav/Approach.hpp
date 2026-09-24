@@ -5,7 +5,14 @@
 #include <cstdlib>
 
 inline bool approachOrder(
-    const Grid& grid, NavLayer layer, Vector2 from, Vector2 to, int& stopX, int& stopY) {
+    const Grid& grid,
+    NavLayer layer,
+    Vector2 from,
+    Vector2 to,
+    int& stopX,
+    int& stopY,
+    int* blockedX = nullptr,
+    int* blockedY = nullptr) {
     int x0 = 0;
     int y0 = 0;
     int x1 = 0;
@@ -40,6 +47,12 @@ inline bool approachOrder(
         if (!canStepCell(grid, layer, lastX, lastY, x, y)) {
             stopX = lastX;
             stopY = lastY;
+            if (blockedX != nullptr) {
+                *blockedX = x;
+            }
+            if (blockedY != nullptr) {
+                *blockedY = y;
+            }
             return true;
         }
         lastX = x;
@@ -48,5 +61,43 @@ inline bool approachOrder(
 
     stopX = x1;
     stopY = y1;
+    if (blockedX != nullptr) {
+        *blockedX = -1;
+    }
+    if (blockedY != nullptr) {
+        *blockedY = -1;
+    }
     return true;
+}
+
+inline Vector2 approachTarget(
+    const Grid& grid, NavLayer layer, Vector2 from, Vector2 to, float radius) {
+    int stopX = 0;
+    int stopY = 0;
+    int blockedX = -1;
+    int blockedY = -1;
+    if (!approachOrder(grid, layer, from, to, stopX, stopY, &blockedX, &blockedY)) {
+        return to;
+    }
+    const Vector2 center = cellCenter(grid, stopX, stopY);
+    if (blockedX < 0 || blockedY < 0 || radius < 0.0f) {
+        return center;
+    }
+    const Vector2 blockedCenter = cellCenter(grid, blockedX, blockedY);
+    const Vector2 toward = sub(blockedCenter, center);
+    const float span = length(toward);
+    if (span <= 0.0f || grid.cellSize <= 0.0f) {
+        return center;
+    }
+    const float boundary = span * 0.5f;
+    const float keep = grid.cellSize * 0.001f;
+    float travel = boundary - radius;
+    if (travel < 0.0f) {
+        travel = 0.0f;
+    }
+    const float limit = boundary - keep;
+    if (travel > limit) {
+        travel = limit;
+    }
+    return add(center, scale(toward, travel / span));
 }

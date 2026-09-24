@@ -36,7 +36,8 @@ inline void applyInput(
         int stopY = 0;
         if (selectedMover != nullptr && selectedTransform != nullptr &&
             approachOrder(grid, selectedTransform->layer, selectedTransform->position, worldPoint, stopX, stopY)) {
-            selectedMover->target = cellCenter(grid, stopX, stopY);
+            selectedMover->target = approachTarget(
+                grid, selectedTransform->layer, selectedTransform->position, worldPoint, selectedMover->radius);
         }
     }
 
