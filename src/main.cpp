@@ -80,6 +80,25 @@ int main() {
         }
 
         if (window.beginFrame()) {
+            for (int y = 0; y < grid.height; ++y) {
+                for (int x = 0; x < grid.width; ++x) {
+                    const float x0 = grid.origin.x + static_cast<float>(x) * grid.cellSize;
+                    const float y0 = grid.origin.y + static_cast<float>(y) * grid.cellSize;
+                    const float x1 = x0 + grid.cellSize;
+                    const float y1 = y0 + grid.cellSize;
+                    const Tile* tile = tileAt(grid, x, y);
+                    const bool cliff = tile != nullptr && tile->height > 0;
+                    drawDiamond(
+                        window.renderer,
+                        worldToScreen(Vector2{x0, y0}, camera),
+                        worldToScreen(Vector2{x1, y0}, camera),
+                        worldToScreen(Vector2{x1, y1}, camera),
+                        worldToScreen(Vector2{x0, y1}, camera),
+                        cliff ? 120 : 24,
+                        cliff ? 96 : 36,
+                        cliff ? 48 : 44);
+                }
+            }
             for (std::size_t i = 0; i < world.entities.size(); ++i) {
                 if (i == 0) {
                     SDL_SetRenderDrawColor(window.renderer, 220, 220, 80, 255);
@@ -89,7 +108,12 @@ int main() {
                 const ScreenPoint screen = worldToScreen(world.transforms[i].position, camera);
                 const int radiusPixels = worldLengthToPixels(world.movers[i].radius, camera);
                 drawCircle(window.renderer, screen, radiusPixels);
-                drawFacingArrow(window.renderer, screen, world.movers[i].facing, radiusPixels);
+                const Vector2 facing = length(world.movers[i].facing) == 0.0f
+                    ? Vector2{1.0f, 0.0f}
+                    : normalize(world.movers[i].facing);
+                const Vector2 tipWorld =
+                    add(world.transforms[i].position, scale(facing, world.movers[i].radius * 1.5f));
+                drawFacingArrow(window.renderer, screen, worldToScreen(tipWorld, camera), radiusPixels);
 
                 if (world.entities[i] == selection.entity) {
                     SDL_SetRenderDrawColor(window.renderer, 255, 255, 255, 255);

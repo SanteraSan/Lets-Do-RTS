@@ -5,8 +5,9 @@
 struct Camera {
     Vector2 origin{};
     float pixelsPerUnit = 10.0f;
-    float offsetX = 200.0f;
-    float offsetY = 360.0f;
+    float yScale = 0.5f;
+    float offsetX = 640.0f;
+    float offsetY = 180.0f;
 };
 
 struct ScreenPoint {
@@ -15,11 +16,11 @@ struct ScreenPoint {
 };
 
 inline ScreenPoint worldToScreen(Vector2 world, Camera camera) {
+    const float dx = world.x - camera.origin.x;
+    const float dy = world.y - camera.origin.y;
     return ScreenPoint{
-        static_cast<int>(
-            camera.offsetX + (world.x - camera.origin.x) * camera.pixelsPerUnit),
-        static_cast<int>(
-            camera.offsetY + (world.y - camera.origin.y) * camera.pixelsPerUnit)};
+        static_cast<int>(camera.offsetX + (dx - dy) * camera.pixelsPerUnit),
+        static_cast<int>(camera.offsetY + (dx + dy) * camera.pixelsPerUnit * camera.yScale)};
 }
 
 inline int worldLengthToPixels(float worldLength, Camera camera) {
@@ -31,10 +32,13 @@ inline int worldLengthToPixels(float worldLength, Camera camera) {
 }
 
 inline Vector2 screenToWorld(ScreenPoint screen, Camera camera) {
-    if (camera.pixelsPerUnit <= 0.0f) {
+    if (camera.pixelsPerUnit <= 0.0f || camera.yScale <= 0.0f) {
         return Vector2{};
     }
+    const float along = (static_cast<float>(screen.x) - camera.offsetX) / camera.pixelsPerUnit;
+    const float across =
+        (static_cast<float>(screen.y) - camera.offsetY) / (camera.pixelsPerUnit * camera.yScale);
     return Vector2{
-        camera.origin.x + (static_cast<float>(screen.x) - camera.offsetX) / camera.pixelsPerUnit,
-        camera.origin.y + (static_cast<float>(screen.y) - camera.offsetY) / camera.pixelsPerUnit};
+        camera.origin.x + (along + across) * 0.5f,
+        camera.origin.y + (across - along) * 0.5f};
 }

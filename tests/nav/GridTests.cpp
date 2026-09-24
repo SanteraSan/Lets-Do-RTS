@@ -1,4 +1,5 @@
 #include "nav/Grid.hpp"
+#include "platform/Camera.hpp"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -72,6 +73,19 @@ TEST_CASE("a negative height cannot be occupied yet") {
     REQUIRE_FALSE(canOccupy(NavLayer::Ground, Tile{-1}));
     REQUIRE_FALSE(canOccupy(NavLayer::Air, Tile{-1}));
     REQUIRE_FALSE(canOccupy(NavLayer::Underwater, Tile{-1}));
+}
+
+TEST_CASE("a click on a cell center maps back to that cell") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 8, 8));
+    const Camera camera{};
+    const Vector2 center = cellCenter(grid, 3, 2);
+    const Vector2 world = screenToWorld(worldToScreen(center, camera), camera);
+    int x = -1;
+    int y = -1;
+    REQUIRE(worldToCell(grid, world, x, y));
+    REQUIRE(x == 3);
+    REQUIRE(y == 2);
 }
 
 TEST_CASE("worldToCell maps a point to the cell that contains it") {
