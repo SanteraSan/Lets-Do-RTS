@@ -107,6 +107,61 @@ TEST_CASE("an order steps around a unit and through the cell once it leaves") {
     REQUIRE(mover(world, walker)->target.y == Catch::Approx(cellCenter(grid, 1, 1).y));
 }
 
+TEST_CASE("a ramp passage works up and down, and a sealed ramp gives up") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 4, 3));
+    for (int y = 0; y < grid.height; ++y) {
+        REQUIRE(setHeight(grid, 1, y, 2));
+    }
+    REQUIRE(setRamp(grid, 1, 1, 1));
+    REQUIRE(setPlateau(grid, 2, 0, 1));
+    REQUIRE(setPlateau(grid, 2, 1, 1));
+    REQUIRE(setPlateau(grid, 2, 2, 1));
+
+    World world;
+    const Entity walker = create(world);
+    const Entity blocker = create(world);
+    transform(world, walker)->position = cellCenter(grid, 1, 1);
+    mover(world, walker)->order = cellCenter(grid, 2, 0);
+    mover(world, walker)->ordered = true;
+    mover(world, walker)->speed = 8.0f;
+    mover(world, walker)->radius = 0.2f;
+    transform(world, blocker)->position = cellCenter(grid, 2, 1);
+
+    for (int i = 0; i < 40; ++i) {
+        moveSystem(world, grid, 0.05f);
+    }
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, transform(world, walker)->position, cellX, cellY));
+    REQUIRE(cellX == 2);
+    REQUIRE(cellY == 0);
+    REQUIRE(mover(world, walker)->ordered);
+
+    mover(world, walker)->order = cellCenter(grid, 0, 1);
+    mover(world, walker)->blockedFor = 0.0f;
+    for (int i = 0; i < 40; ++i) {
+        moveSystem(world, grid, 0.05f);
+    }
+    REQUIRE(worldToCell(grid, transform(world, walker)->position, cellX, cellY));
+    REQUIRE(cellX == 0);
+    REQUIRE(cellY == 1);
+
+    transform(world, walker)->position = cellCenter(grid, 1, 1);
+    mover(world, walker)->order = cellCenter(grid, 3, 1);
+    mover(world, walker)->ordered = true;
+    mover(world, walker)->blockedFor = 0.0f;
+    const Entity sideA = create(world);
+    const Entity sideB = create(world);
+    transform(world, sideA)->position = cellCenter(grid, 2, 0);
+    transform(world, sideB)->position = cellCenter(grid, 2, 2);
+    moveSystem(world, grid, 0.6f);
+    moveSystem(world, grid, 0.5f);
+    REQUIRE_FALSE(mover(world, walker)->ordered);
+    REQUIRE(worldToCell(grid, transform(world, walker)->position, cellX, cellY));
+    REQUIRE(cellX == 1);
+}
+
 TEST_CASE("an equal passage keeps the side already chosen") {
     Grid grid;
     REQUIRE(makeGrid(grid, 5, 3));

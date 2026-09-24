@@ -116,24 +116,35 @@ TEST_CASE("moveOnGrid stops before a cell held by another unit") {
     REQUIRE(cellY == 0);
 }
 
-TEST_CASE("moveOnGrid slides along the open side of a blocked cell") {
+TEST_CASE("moveOnGrid enters an open diagonal cell without reversing") {
     Grid grid;
     REQUIRE(makeGrid(grid, 3, 3));
-    Vector2 position = cellCenter(grid, 0, 1);
     const std::vector<PathCell> taken{PathCell{1, 1}};
-    const float startY = position.y;
-    for (int i = 0; i < 3; ++i) {
-        const float beforeY = position.y;
-        moveOnGrid(position, cellCenter(grid, 1, 0), NavLayer::Ground, grid, 1.0f, 0.2f, &taken);
-        REQUIRE(position.y <= beforeY);
+    Vector2 up = cellCenter(grid, 0, 1);
+    Vector2 down = cellCenter(grid, 1, 0);
+    for (int i = 0; i < 20; ++i) {
+        const float beforeX = up.x;
+        const float beforeY = up.y;
+        moveOnGrid(up, down, NavLayer::Ground, grid, 2.0f, 0.2f, &taken);
+        REQUIRE(up.x >= beforeX);
+        REQUIRE(up.y <= beforeY);
     }
     int cellX = -1;
     int cellY = -1;
-    REQUIRE(worldToCell(grid, position, cellX, cellY));
+    REQUIRE(worldToCell(grid, up, cellX, cellY));
+    REQUIRE(cellX == 1);
+    REQUIRE(cellY == 0);
+
+    for (int i = 0; i < 20; ++i) {
+        const float beforeX = down.x;
+        const float beforeY = down.y;
+        moveOnGrid(down, cellCenter(grid, 0, 1), NavLayer::Ground, grid, 2.0f, 0.2f, &taken);
+        REQUIRE(down.x <= beforeX);
+        REQUIRE(down.y >= beforeY);
+    }
+    REQUIRE(worldToCell(grid, down, cellX, cellY));
     REQUIRE(cellX == 0);
     REQUIRE(cellY == 1);
-    REQUIRE(position.y < startY);
-    REQUIRE(position.x == Catch::Approx(cellCenter(grid, 0, 1).x));
 }
 
 TEST_CASE("moveOnGrid ignores a non-positive speed") {
