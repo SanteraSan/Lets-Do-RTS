@@ -113,7 +113,7 @@ TEST_CASE("a blocked order gives up after one second and stays put") {
     World world;
     const Entity walker = create(world);
     const Entity blocker = create(world);
-    transform(world, walker)->position = Vector2{1.999f, 0.5f};
+    transform(world, walker)->position = cellCenter(grid, 1, 0);
     mover(world, walker)->order = cellCenter(grid, 4, 0);
     mover(world, walker)->ordered = true;
     mover(world, walker)->speed = 10.0f;
@@ -122,6 +122,7 @@ TEST_CASE("a blocked order gives up after one second and stays put") {
 
     moveSystem(world, grid, 0.6f);
     REQUIRE(mover(world, walker)->ordered);
+    REQUIRE(transform(world, walker)->position.x > cellCenter(grid, 1, 0).x);
     moveSystem(world, grid, 0.4f);
     REQUIRE_FALSE(mover(world, walker)->ordered);
     REQUIRE(transform(world, walker)->position.x == Catch::Approx(1.999f));
@@ -130,6 +131,28 @@ TEST_CASE("a blocked order gives up after one second and stays put") {
     moveSystem(world, grid, 1.0f);
     REQUIRE_FALSE(mover(world, walker)->ordered);
     REQUIRE(transform(world, walker)->position.x == Catch::Approx(1.999f));
+}
+
+TEST_CASE("a slide off the blocked cell does not reset the wait") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 5, 1));
+    World world;
+    const Entity walker = create(world);
+    const Entity blocker = create(world);
+    transform(world, walker)->position = cellCenter(grid, 1, 0);
+    mover(world, walker)->order = cellCenter(grid, 4, 0);
+    mover(world, walker)->ordered = true;
+    mover(world, walker)->speed = 10.0f;
+    mover(world, walker)->radius = 0.2f;
+    transform(world, blocker)->position = cellCenter(grid, 2, 0);
+
+    moveSystem(world, grid, 0.4f);
+    REQUIRE(mover(world, walker)->ordered);
+    REQUIRE(mover(world, walker)->blockedFor == Catch::Approx(0.4f));
+
+    transform(world, walker)->position = cellCenter(grid, 0, 0);
+    moveSystem(world, grid, 0.7f);
+    REQUIRE_FALSE(mover(world, walker)->ordered);
 }
 
 TEST_CASE("a blocked order continues when the cell opens within one second") {

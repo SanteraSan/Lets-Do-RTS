@@ -18,7 +18,15 @@ inline void steerToOrder(Mover& mover, NavLayer layer, Vector2 from, const Grid&
 }
 
 inline bool orderStopsShort(
-    const Grid& grid, NavLayer layer, Vector2 from, Vector2 order, const std::vector<PathCell>& taken) {
+    const Grid& grid,
+    NavLayer layer,
+    Vector2 from,
+    Vector2 order,
+    const std::vector<PathCell>& taken,
+    bool* noStep = nullptr) {
+    if (noStep != nullptr) {
+        *noStep = false;
+    }
     int startX = 0;
     int startY = 0;
     int goalX = 0;
@@ -31,6 +39,9 @@ inline bool orderStopsShort(
     }
     const std::vector<PathCell> path = findPath(grid, layer, startX, startY, goalX, goalY, &taken);
     if (path.empty()) {
+        if (noStep != nullptr) {
+            *noStep = true;
+        }
         return true;
     }
     return path.back().x != goalX || path.back().y != goalY;
@@ -53,9 +64,11 @@ inline void moveSystem(World& world, const Grid& grid, float dt) {
         const Vector2 previous = t.position;
         moveOnGrid(t.position, m.target, t.layer, grid, m.speed, dt, &taken);
         const Vector2 delta = sub(t.position, previous);
-        const bool pressed = m.ordered && length(delta) <= 0.001f &&
-            orderStopsShort(grid, t.layer, t.position, m.order, taken);
-        if (pressed) {
+        bool noStep = false;
+        const bool closed = m.ordered && orderStopsShort(grid, t.layer, t.position, m.order, taken, &noStep);
+        if (!closed) {
+            m.blockedFor = 0.0f;
+        } else if (noStep || m.blockedFor > 0.0f) {
             m.blockedFor += dt;
             if (m.blockedFor >= kBlockedOrderSeconds) {
                 m.ordered = false;
@@ -63,8 +76,6 @@ inline void moveSystem(World& world, const Grid& grid, float dt) {
                 m.waypoints.clear();
                 m.target = t.position;
             }
-        } else {
-            m.blockedFor = 0.0f;
         }
         if (length(delta) > 0.001f) {
             m.facing = normalize(delta);
