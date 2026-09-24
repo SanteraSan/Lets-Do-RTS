@@ -147,6 +147,26 @@ TEST_CASE("moveOnGrid enters an open diagonal cell without reversing") {
     REQUIRE(cellY == 1);
 }
 
+TEST_CASE("moveOnGrid approaches a blocked corner without stepping back") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 3, 3));
+    Vector2 position{0.85f, 1.15f};
+    const std::vector<PathCell> taken{PathCell{1, 1}};
+    const Vector2 goal = cellCenter(grid, 1, 0);
+    for (int i = 0; i < 30; ++i) {
+        const float beforeX = position.x;
+        const float beforeY = position.y;
+        moveOnGrid(position, goal, NavLayer::Ground, grid, 2.0f, 0.15f, &taken);
+        REQUIRE(position.x >= beforeX - 0.001f);
+        REQUIRE(position.y <= beforeY + 0.001f);
+    }
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, position, cellX, cellY));
+    REQUIRE(cellX == 1);
+    REQUIRE(cellY == 0);
+}
+
 TEST_CASE("moveOnGrid ignores a non-positive speed") {
     Grid grid;
     REQUIRE(makeGrid(grid, 4, 4));

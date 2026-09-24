@@ -92,6 +92,37 @@ TEST_CASE("right click on open ground snaps the target to the cell center") {
     REQUIRE(mover(world, id)->waypoints.back().y == Catch::Approx(4.5f));
 }
 
+TEST_CASE("right click on a raised plateau orders that plateau cell") {
+    World world;
+    Selection selection;
+    const Entity id = create(world);
+    selection.entity = id;
+    transform(world, id)->position = Vector2{0.2f, 0.2f};
+    const Camera camera{};
+    Grid grid;
+    REQUIRE(makeGrid(grid, 6, 6));
+    grid.cellSize = 4.0f;
+    REQUIRE(setRamp(grid, 2, 3, 0));
+    REQUIRE(setPlateau(grid, 3, 3, 1));
+    const Vector2 center = cellCenter(grid, 3, 3);
+    const float lift = surfaceLift(1, grid.cellSize);
+
+    InputFrame order;
+    order.rightClick = true;
+    order.mouse = worldToScreen(center, lift, camera);
+    applyInput(world, selection, order, camera, grid);
+    REQUIRE(mover(world, id)->order.x == Catch::Approx(center.x));
+    REQUIRE(mover(world, id)->order.y == Catch::Approx(center.y));
+    REQUIRE_FALSE(mover(world, id)->waypoints.empty());
+    REQUIRE(mover(world, id)->waypoints.back().x == Catch::Approx(center.x));
+    REQUIRE(mover(world, id)->waypoints.back().y == Catch::Approx(center.y));
+    const Vector2 flat = screenToWorld(order.mouse, camera);
+    int flatX = -1;
+    int flatY = -1;
+    REQUIRE(worldToCell(grid, flat, flatX, flatY));
+    REQUIRE((flatX != 3 || flatY != 3));
+}
+
 TEST_CASE("right click past a cliff stops a ground unit against the cliff") {
     World world;
     Selection selection;

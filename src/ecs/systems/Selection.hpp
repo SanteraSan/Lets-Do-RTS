@@ -31,6 +31,38 @@ inline bool pointOnFace(ScreenPoint point, ScreenPoint a, ScreenPoint b, ScreenP
     return pointInTriangle(point, a, b, c) || pointInTriangle(point, a, c, d);
 }
 
+inline bool pickCell(const Grid& grid, ScreenPoint mouse, Camera camera, int& outX, int& outY) {
+    bool found = false;
+    float bestDepth = 0.0f;
+    for (int y = 0; y < grid.height; ++y) {
+        for (int x = 0; x < grid.width; ++x) {
+            const Tile* tile = tileAt(grid, x, y);
+            if (tile == nullptr || grid.cellSize <= 0.0f) {
+                continue;
+            }
+            const float x0 = grid.origin.x + static_cast<float>(x) * grid.cellSize;
+            const float y0 = grid.origin.y + static_cast<float>(y) * grid.cellSize;
+            const float lift = surfaceLift(tile->height, grid.cellSize);
+            const ScreenPoint top = worldToScreen(Vector2{x0, y0}, lift, camera);
+            const ScreenPoint right = worldToScreen(Vector2{x0 + grid.cellSize, y0}, lift, camera);
+            const ScreenPoint bottom = worldToScreen(Vector2{x0 + grid.cellSize, y0 + grid.cellSize}, lift, camera);
+            const ScreenPoint left = worldToScreen(Vector2{x0, y0 + grid.cellSize}, lift, camera);
+            if (!pointOnFace(mouse, top, right, bottom, left)) {
+                continue;
+            }
+            const Vector2 center = cellCenter(grid, x, y);
+            const float depth = viewDepth(center, lift, camera);
+            if (!found || depth < bestDepth) {
+                found = true;
+                bestDepth = depth;
+                outX = x;
+                outY = y;
+            }
+        }
+    }
+    return found;
+}
+
 inline Entity hitUnit(const World& world, ScreenPoint mouse, Camera camera, const Grid& grid) {
     for (int i = static_cast<int>(world.entities.size()) - 1; i >= 0; --i) {
         const std::size_t index = static_cast<std::size_t>(i);
@@ -55,7 +87,10 @@ inline Entity hitUnit(const World& world, ScreenPoint mouse, Camera camera, cons
 
 inline void applyInput(
     World& world, Selection& selection, const InputFrame& input, Camera camera, const Grid& grid) {
-    const Vector2 worldPoint = screenToWorld(input.mouse, camera);
+    int pickedX = 0;
+    int pickedY = 0;
+    const bool picked = pickCell(grid, input.mouse, camera, pickedX, pickedY);
+    const Vector2 worldPoint = picked ? cellCenter(grid, pickedX, pickedY) : screenToWorld(input.mouse, camera);
 
     if (input.leftClick) {
         selection.entity = hitUnit(world, input.mouse, camera, grid);

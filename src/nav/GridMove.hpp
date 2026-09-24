@@ -72,21 +72,34 @@ inline void moveOnGrid(
             position = next;
             return;
         }
-        if (towardOpen) {
-            Vector2 step = position;
-            moveTowards(step, cellCenter(grid, towardX, towardY), speed, dt);
-            int stepX = fromX;
-            int stepY = fromY;
-            if (worldToCell(grid, step, stepX, stepY) && openCell(stepX, stepY)) {
-                position = step;
-                return;
+        Vector2 alongX = position;
+        alongX.x = next.x;
+        Vector2 alongY = position;
+        alongY.y = next.y;
+        auto staysOpen = [&](Vector2 step) {
+            int stepX = 0;
+            int stepY = 0;
+            if (!worldToCell(grid, step, stepX, stepY)) {
+                return false;
             }
-            clampInsideCell(grid, fromX, fromY, step);
-            position = step;
+            return (stepX == fromX && stepY == fromY) || openCell(stepX, stepY);
+        };
+        const bool xOpen = staysOpen(alongX);
+        const bool yOpen = staysOpen(alongY);
+        if (xOpen && yOpen) {
+            const float gapX = target.x > position.x ? target.x - position.x : position.x - target.x;
+            const float gapY = target.y > position.y ? target.y - position.y : position.y - target.y;
+            position = gapY > gapX ? alongY : alongX;
             return;
         }
-        clampInsideCell(grid, fromX, fromY, next);
-        position = next;
+        if (xOpen) {
+            position = alongX;
+            return;
+        }
+        if (yOpen) {
+            position = alongY;
+            return;
+        }
         return;
     }
 
