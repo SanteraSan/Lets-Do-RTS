@@ -76,7 +76,7 @@ int main() {
         addFrameTime(step, cappedFrameSeconds(rawSeconds));
 
         while (consumeStep(step)) {
-            moveSystem(world, step.delta);
+            moveSystem(world, grid, step.delta);
         }
 
         if (window.beginFrame()) {

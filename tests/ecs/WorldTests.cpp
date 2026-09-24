@@ -39,16 +39,18 @@ TEST_CASE("moveSystem advances every entity toward its target") {
     World world;
     const Entity a = create(world);
     const Entity b = create(world);
-    transform(world, a)->position = Vector2{0.0f, 0.0f};
-    mover(world, a)->target = Vector2{10.0f, 0.0f};
-    mover(world, a)->speed = 2.0f;
-    transform(world, b)->position = Vector2{0.0f, 5.0f};
-    mover(world, b)->target = Vector2{10.0f, 5.0f};
-    mover(world, b)->speed = 2.0f;
+    transform(world, a)->position = Vector2{0.2f, 0.2f};
+    mover(world, a)->target = Vector2{10.0f, 0.2f};
+    mover(world, a)->speed = 0.4f;
+    transform(world, b)->position = Vector2{0.2f, 2.2f};
+    mover(world, b)->target = Vector2{10.0f, 2.2f};
+    mover(world, b)->speed = 0.4f;
 
-    moveSystem(world, 1.0f);
+    Grid grid;
+    REQUIRE(makeGrid(grid, 16, 8));
+    moveSystem(world, grid, 1.0f);
 
-    REQUIRE(transform(world, a)->position.x == Catch::Approx(2.0f));
-    REQUIRE(transform(world, b)->position.x == Catch::Approx(2.0f));
+    REQUIRE(transform(world, a)->position.x == Catch::Approx(0.6f));
+    REQUIRE(transform(world, b)->position.x == Catch::Approx(0.6f));
     REQUIRE(mover(world, a)->facing.x == Catch::Approx(1.0f));
 }

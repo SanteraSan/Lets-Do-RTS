@@ -37,6 +37,7 @@ add_executable(rts_tests
     tests/ecs/SelectionTests.cpp
     tests/nav/GridTests.cpp
     tests/nav/ApproachTests.cpp
+    tests/nav/GridMoveTests.cpp
 )
 target_link_libraries(rts_tests PRIVATE rts_math rts_platform Catch2::Catch2WithMain)
 
