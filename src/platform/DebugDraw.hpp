@@ -2,13 +2,12 @@
 
 #include "math/Vector2.hpp"
 #include "platform/Camera.hpp"
+#include "platform/GlDraw.hpp"
 
-struct SDL_Renderer;
-
-void drawCircle(SDL_Renderer* renderer, ScreenPoint center, int radiusPixels);
-void drawFacingArrow(SDL_Renderer* renderer, ScreenPoint center, ScreenPoint tip, int radiusPixels);
+void drawCircle(GlDraw& draw, ScreenPoint center, int radiusPixels, int red, int green, int blue);
+void drawFacingArrow(GlDraw& draw, ScreenPoint center, ScreenPoint tip, int radiusPixels, int red, int green, int blue);
 void drawDiamond(
-    SDL_Renderer* renderer,
+    GlDraw& draw,
     ScreenPoint top,
     ScreenPoint right,
     ScreenPoint bottom,

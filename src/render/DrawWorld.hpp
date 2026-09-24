@@ -5,7 +5,8 @@
 #include "nav/Grid.hpp"
 #include "platform/Camera.hpp"
 
+#include "platform/GlDraw.hpp"
+
 struct SDL_Renderer;
 
-void drawWorld(
-    SDL_Renderer* renderer, const World& world, const Grid& grid, Camera camera, Selection selection);
+void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera, Selection selection);

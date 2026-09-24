@@ -1,5 +1,6 @@
 #pragma once
 
+#include "platform/GlDraw.hpp"
 #include "platform/Input.hpp"
 
 #include <SDL.h>
@@ -16,7 +17,10 @@ inline bool isValidWindowDesc(WindowDesc desc) {
 
 struct Window {
     SDL_Window* handle = nullptr;
-    SDL_Renderer* renderer = nullptr;
+    SDL_GLContext context = nullptr;
+    GlDraw draw;
+    int width = 0;
+    int height = 0;
 
     Window() = default;
     Window(const Window&) = delete;

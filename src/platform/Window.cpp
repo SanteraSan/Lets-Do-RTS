@@ -9,32 +9,49 @@ bool Window::open(WindowDesc desc) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         return false;
     }
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     handle = SDL_CreateWindow(
-        desc.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, desc.width, desc.height, 0);
+        desc.title,
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        desc.width,
+        desc.height,
+        SDL_WINDOW_OPENGL);
     if (handle == nullptr) {
         SDL_Quit();
         return false;
     }
-    renderer = SDL_CreateRenderer(handle, -1, SDL_RENDERER_ACCELERATED);
-    if (renderer == nullptr) {
-        SDL_DestroyWindow(handle);
-        handle = nullptr;
-        SDL_Quit();
+    context = SDL_GL_CreateContext(handle);
+    if (context == nullptr || !draw.init()) {
+        close();
         return false;
     }
+    width = desc.width;
+    height = desc.height;
+    draw.width = width;
+    draw.height = height;
     return true;
 }
 
 void Window::close() {
-    if (renderer != nullptr) {
-        SDL_DestroyRenderer(renderer);
-        renderer = nullptr;
+    if (context != nullptr) {
+        SDL_GL_MakeCurrent(handle, context);
+        draw.shutdown();
+        SDL_GL_DeleteContext(context);
+        context = nullptr;
+    } else {
+        draw.shutdown();
     }
     if (handle == nullptr) {
         return;
     }
     SDL_DestroyWindow(handle);
     handle = nullptr;
+    width = 0;
+    height = 0;
     SDL_Quit();
 }
 
@@ -87,16 +104,19 @@ void Window::pollEvents(InputFrame& input) {
 }
 
 bool Window::beginFrame() {
-    if (renderer == nullptr) {
+    if (context == nullptr || !draw.ready) {
         return false;
     }
-    SDL_SetRenderDrawColor(renderer, 20, 24, 32, 255);
-    SDL_RenderClear(renderer);
+    draw.width = width;
+    draw.height = height;
+    draw.clear(20.0f / 255.0f, 24.0f / 255.0f, 32.0f / 255.0f);
     return true;
 }
 
 void Window::endFrame() {
-    if (renderer != nullptr) {
-        SDL_RenderPresent(renderer);
+    if (context == nullptr) {
+        return;
     }
+    draw.flush();
+    SDL_GL_SwapWindow(handle);
 }

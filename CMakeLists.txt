@@ -12,13 +12,15 @@ target_include_directories(rts_math INTERFACE "${CMAKE_SOURCE_DIR}/src")
 target_compile_features(rts_math INTERFACE cxx_std_17)
 
 find_package(SDL2 CONFIG REQUIRED)
+find_package(OpenGL REQUIRED)
 add_library(rts_platform
     src/platform/Window.cpp
     src/platform/DebugDraw.cpp
+    src/platform/GlDraw.cpp
     src/render/DrawWorld.cpp
 )
 target_include_directories(rts_platform PUBLIC "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(rts_platform PUBLIC SDL2::SDL2)
+target_link_libraries(rts_platform PUBLIC SDL2::SDL2 OpenGL::GL)
 
 add_executable(rts_game src/main.cpp)
 target_link_libraries(rts_game PRIVATE rts_platform)

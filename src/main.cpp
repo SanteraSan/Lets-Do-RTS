@@ -100,7 +100,7 @@ int main() {
         }
 
         if (window.beginFrame()) {
-            drawWorld(window.renderer, world, grid, camera, selection);
+            drawWorld(window.draw, world, grid, camera, selection);
             window.endFrame();
         }
 
