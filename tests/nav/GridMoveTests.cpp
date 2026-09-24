@@ -90,6 +90,19 @@ TEST_CASE("moveOnGrid keeps a ground unit out of water") {
     REQUIRE(cellY == 1);
 }
 
+TEST_CASE("moveOnGrid lets a ground unit enter a bridge") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 8, 4));
+    REQUIRE(setBridge(grid, 2, 1));
+    Vector2 position{1.4f, 1.2f};
+    moveOnGrid(position, Vector2{6.2f, 1.2f}, NavLayer::Ground, grid, 10.0f, 1.0f);
+    int cellX = -1;
+    int cellY = -1;
+    REQUIRE(worldToCell(grid, position, cellX, cellY));
+    REQUIRE(cellX == 2);
+    REQUIRE(cellY == 1);
+}
+
 TEST_CASE("moveOnGrid ignores a non-positive speed") {
     Grid grid;
     REQUIRE(makeGrid(grid, 4, 4));

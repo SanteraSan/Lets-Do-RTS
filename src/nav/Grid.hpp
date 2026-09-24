@@ -7,6 +7,7 @@
 
 struct Tile {
     int height = 0;
+    bool bridge = false;
 };
 
 struct Grid {
@@ -59,7 +60,21 @@ inline bool setHeight(Grid& grid, int x, int y, int height) {
     return true;
 }
 
+inline bool setBridge(Grid& grid, int x, int y) {
+    const int index = cellIndex(grid, x, y);
+    if (index < 0) {
+        return false;
+    }
+    Tile& tile = grid.tiles[static_cast<std::size_t>(index)];
+    tile.bridge = true;
+    tile.height = 0;
+    return true;
+}
+
 inline bool canOccupy(NavLayer layer, Tile tile) {
+    if (tile.bridge) {
+        return layer == NavLayer::Ground || layer == NavLayer::Underwater || layer == NavLayer::Air;
+    }
     if (tile.height < 0) {
         return layer == NavLayer::Underwater || layer == NavLayer::Air;
     }

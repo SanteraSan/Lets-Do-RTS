@@ -77,6 +77,24 @@ TEST_CASE("ground cannot occupy water") {
     REQUIRE_FALSE(canOccupy(NavLayer::Ground, Tile{-1}));
 }
 
+TEST_CASE("a bridge can be occupied by ground, underwater, and air") {
+    const Tile bridge{0, true};
+    REQUIRE(canOccupy(NavLayer::Ground, bridge));
+    REQUIRE(canOccupy(NavLayer::Underwater, bridge));
+    REQUIRE(canOccupy(NavLayer::Air, bridge));
+}
+
+TEST_CASE("setBridge opens a cell for every layer and rejects an outside cell") {
+    Grid grid;
+    REQUIRE(makeGrid(grid, 4, 4));
+    REQUIRE(setHeight(grid, 1, 1, -1));
+    REQUIRE(setBridge(grid, 1, 1));
+    REQUIRE(tileAt(grid, 1, 1)->bridge);
+    REQUIRE(canOccupyCell(grid, NavLayer::Ground, 1, 1));
+    REQUIRE(canOccupyCell(grid, NavLayer::Underwater, 1, 1));
+    REQUIRE_FALSE(setBridge(grid, -1, 0));
+}
+
 TEST_CASE("air can occupy water") {
     REQUIRE(canOccupy(NavLayer::Air, Tile{-2}));
 }

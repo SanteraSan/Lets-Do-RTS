@@ -61,6 +61,10 @@ int main() {
         }
     }
 
+    for (int x = 3; x <= 7; ++x) {
+        setBridge(grid, x, 18);
+    }
+
     const Entity sub = create(world);
     transform(world, sub)->layer = NavLayer::Underwater;
     transform(world, sub)->position = cellCenter(grid, 4, 18);
@@ -100,27 +104,33 @@ int main() {
                     const float y1 = y0 + grid.cellSize;
                     const Tile* tile = tileAt(grid, x, y);
                     const int height = tile == nullptr ? 0 : tile->height;
-                    int red = 24;
-                    int green = 36;
-                    int blue = 44;
-                    if (height < 0) {
-                        red = 20;
-                        green = 70;
-                        blue = 120;
-                    } else if (height > 0) {
-                        red = 120;
-                        green = 96;
-                        blue = 48;
+                    const bool bridge = tile != nullptr && tile->bridge;
+                    const ScreenPoint top = worldToScreen(Vector2{x0, y0}, camera);
+                    const ScreenPoint right = worldToScreen(Vector2{x1, y0}, camera);
+                    const ScreenPoint bottom = worldToScreen(Vector2{x1, y1}, camera);
+                    const ScreenPoint left = worldToScreen(Vector2{x0, y1}, camera);
+                    if (bridge) {
+                        drawDiamond(window.renderer, top, right, bottom, left, 20, 70, 120);
+                        const ScreenPoint bandTop{(top.x + right.x) / 2, (top.y + right.y) / 2};
+                        const ScreenPoint bandRight{(right.x + bottom.x) / 2, (right.y + bottom.y) / 2};
+                        const ScreenPoint bandBottom{(bottom.x + left.x) / 2, (bottom.y + left.y) / 2};
+                        const ScreenPoint bandLeft{(left.x + top.x) / 2, (left.y + top.y) / 2};
+                        drawDiamond(window.renderer, bandTop, bandRight, bandBottom, bandLeft, 24, 36, 44);
+                    } else {
+                        int red = 24;
+                        int green = 36;
+                        int blue = 44;
+                        if (height < 0) {
+                            red = 20;
+                            green = 70;
+                            blue = 120;
+                        } else if (height > 0) {
+                            red = 120;
+                            green = 96;
+                            blue = 48;
+                        }
+                        drawDiamond(window.renderer, top, right, bottom, left, red, green, blue);
                     }
-                    drawDiamond(
-                        window.renderer,
-                        worldToScreen(Vector2{x0, y0}, camera),
-                        worldToScreen(Vector2{x1, y0}, camera),
-                        worldToScreen(Vector2{x1, y1}, camera),
-                        worldToScreen(Vector2{x0, y1}, camera),
-                        red,
-                        green,
-                        blue);
                 }
             }
             for (std::size_t i = 0; i < world.entities.size(); ++i) {
