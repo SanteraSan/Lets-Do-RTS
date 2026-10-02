@@ -2,6 +2,7 @@
 
 #include "platform/DebugDraw.hpp"
 #include "render/Appearance.hpp"
+#include "render/GroundSprite.hpp"
 #include "render/StandLift.hpp"
 #include "render/UnitCube.hpp"
 
@@ -56,7 +57,14 @@ int shade(int channel, int delta) {
 
 } // namespace
 
-void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera, Selection selection) {
+void drawWorld(
+    GlDraw& draw,
+    const World& world,
+    const Grid& grid,
+    Camera camera,
+    Selection selection,
+    int pictureWidth,
+    int pictureHeight) {
     for (int y = 0; y < grid.height; ++y) {
         for (int x = 0; x < grid.width; ++x) {
             const Tile* tile = tileAt(grid, x, y);
@@ -127,9 +135,24 @@ void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera
         const float markerLift = cellSurfaceLift(grid, world.transforms[i].position);
         const Vector2 facing = length(world.movers[i].facing) == 0.0f ? Vector2{1.0f, 0.0f}
                                                                        : normalize(world.movers[i].facing);
+        const bool soldier =
+            world.transforms[i].layer == NavLayer::Ground && pictureWidth > 0 && pictureHeight > 0;
+        if (soldier) {
+            const float bob = walkBob(world.movers[i].traveled, world.movers[i].moving);
+            const SpriteScreen frame = groundSpriteScreen(
+                world.transforms[i].position,
+                facing,
+                feet,
+                grid.cellSize,
+                pictureWidth,
+                pictureHeight,
+                camera,
+                bob);
+            draw.sprite(frame.feet, frame.pixelWidth, frame.pixelHeight, 255, 255, 255, frame.depth, frame.flip);
+        }
         const UnitCube cube =
             visibleUnitCube(world.transforms[i].position, facing, world.movers[i].radius * 2.0f, camera.yScale);
-        for (int faceIndex = 0; faceIndex < cube.count; ++faceIndex) {
+        for (int faceIndex = 0; faceIndex < cube.count && !soldier; ++faceIndex) {
             const CubeFace& face = cube.faces[faceIndex];
             const int delta = face.front ? 48 : (face.top ? 0 : -48);
             const float ha = face.corner[0].height + feet;

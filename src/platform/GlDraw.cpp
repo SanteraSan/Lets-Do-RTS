@@ -38,12 +38,13 @@ uniform sampler2D uTex;
 out vec4 fragColor;
 void main() {
     vec4 texel = texture(uTex, vUv);
+    if (texel.a < 0.02) discard;
     fragColor = vec4(vColor, 1.0) * texel;
 }
 )";
 
 const char* kSpriteVertexShader = R"(#version 330 core
-layout(location = 0) in vec2 aPos;
+layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec2 aUv;
 layout(location = 2) in vec3 aColor;
 uniform vec2 uScreen;
@@ -52,7 +53,7 @@ out vec2 vUv;
 void main() {
     float x = aPos.x / uScreen.x * 2.0 - 1.0;
     float y = 1.0 - aPos.y / uScreen.y * 2.0;
-    gl_Position = vec4(x, y, 0.0, 1.0);
+    gl_Position = vec4(x, y, aPos.z, 1.0);
     vUv = aUv;
     vColor = aColor;
 }
@@ -187,13 +188,13 @@ bool GlDraw::init() {
     glBindVertexArray(spriteVao);
     glBindBuffer(GL_ARRAY_BUFFER, spriteVbo);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GlSpriteVertex), nullptr);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GlSpriteVertex), nullptr);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(
-        1, 2, GL_FLOAT, GL_FALSE, sizeof(GlSpriteVertex), reinterpret_cast<void*>(sizeof(float) * 2));
+        1, 2, GL_FLOAT, GL_FALSE, sizeof(GlSpriteVertex), reinterpret_cast<void*>(sizeof(float) * 3));
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(
-        2, 3, GL_FLOAT, GL_FALSE, sizeof(GlSpriteVertex), reinterpret_cast<void*>(sizeof(float) * 4));
+        2, 3, GL_FLOAT, GL_FALSE, sizeof(GlSpriteVertex), reinterpret_cast<void*>(sizeof(float) * 5));
 
     ready = true;
     return true;
@@ -257,22 +258,55 @@ void GlDraw::line(ScreenPoint a, ScreenPoint b, float za, float zb, int red, int
     lines.push_back(vertex(b, zb - kOutlineCloser, red, green, blue));
 }
 
-void GlDraw::sprite(ScreenPoint feet, int pixelWidth, int pixelHeight, int red, int green, int blue) {
+void GlDraw::setSprite(const SpriteImage& image) {
+    if (!ready || image.width <= 0 || image.height <= 0) {
+        return;
+    }
+    const std::size_t need =
+        static_cast<std::size_t>(image.width) * static_cast<std::size_t>(image.height) * 4;
+    if (image.rgba.size() < need) {
+        return;
+    }
+    if (texture == 0) {
+        glGenTextures(1, &texture);
+    }
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGBA,
+        image.width,
+        image.height,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        image.rgba.data());
+}
+
+void GlDraw::sprite(
+    ScreenPoint feet, int pixelWidth, int pixelHeight, int red, int green, int blue, float depth, bool flip) {
     if (pixelWidth <= 0 || pixelHeight <= 0) {
         return;
     }
     const float r = static_cast<float>(red) / 255.0f;
     const float g = static_cast<float>(green) / 255.0f;
     const float b = static_cast<float>(blue) / 255.0f;
+    const float z = depthToClip(depth);
     const float left = static_cast<float>(feet.x) - static_cast<float>(pixelWidth) * 0.5f;
     const float right = left + static_cast<float>(pixelWidth);
     const float bottom = static_cast<float>(feet.y);
     const float top = bottom - static_cast<float>(pixelHeight);
+    const float u0 = flip ? 1.0f : 0.0f;
+    const float u1 = flip ? 0.0f : 1.0f;
     const GlSpriteVertex corners[4] = {
-        {left, bottom, 0.0f, 1.0f, r, g, b},
-        {right, bottom, 1.0f, 1.0f, r, g, b},
-        {right, top, 1.0f, 0.0f, r, g, b},
-        {left, top, 0.0f, 0.0f, r, g, b},
+        {left, bottom, z, u0, 1.0f, r, g, b},
+        {right, bottom, z, u1, 1.0f, r, g, b},
+        {right, top, z, u1, 0.0f, r, g, b},
+        {left, top, z, u0, 0.0f, r, g, b},
     };
     const int order[6] = {0, 1, 2, 0, 2, 3};
     for (int index : order) {

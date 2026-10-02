@@ -9,4 +9,11 @@
 
 struct SDL_Renderer;
 
-void drawWorld(GlDraw& draw, const World& world, const Grid& grid, Camera camera, Selection selection);
+void drawWorld(
+    GlDraw& draw,
+    const World& world,
+    const Grid& grid,
+    Camera camera,
+    Selection selection,
+    int pictureWidth = 0,
+    int pictureHeight = 0);

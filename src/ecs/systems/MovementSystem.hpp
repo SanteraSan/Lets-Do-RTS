@@ -90,6 +90,45 @@ inline void steerToOrder(
     adoptRoute(mover, layer, from, grid, points);
 }
 
+inline bool stepCellToward(const Grid& grid, Vector2 from, Vector2 to, int& outX, int& outY) {
+    int fromX = 0;
+    int fromY = 0;
+    int toX = 0;
+    int toY = 0;
+    if (!worldToCell(grid, from, fromX, fromY) || !worldToCell(grid, to, toX, toY)) {
+        return false;
+    }
+    if (fromX == toX && fromY == toY) {
+        return false;
+    }
+    const int stepX = toX > fromX ? 1 : (toX < fromX ? -1 : 0);
+    const int stepY = toY > fromY ? 1 : (toY < fromY ? -1 : 0);
+    outX = fromX + stepX;
+    outY = fromY + stepY;
+    return tileAt(grid, outX, outY) != nullptr;
+}
+
+inline bool flushAgainstUnit(const Grid& grid, Vector2 position, Vector2 target, const std::vector<PathCell>& taken) {
+    int hereX = 0;
+    int hereY = 0;
+    if (!worldToCell(grid, position, hereX, hereY)) {
+        return false;
+    }
+    if (cellTaken(&taken, hereX, hereY)) {
+        return true;
+    }
+    int nextX = 0;
+    int nextY = 0;
+    if (!stepCellToward(grid, position, target, nextX, nextY) || !cellTaken(&taken, nextX, nextY)) {
+        return false;
+    }
+    const float span = distance(cellCenter(grid, hereX, hereY), cellCenter(grid, nextX, nextY));
+    if (span <= 0.0f) {
+        return false;
+    }
+    return distance(position, cellCenter(grid, nextX, nextY)) + grid.cellSize * 0.05f < span;
+}
+
 inline bool orderStopsShort(
     const Grid& grid,
     NavLayer layer,
@@ -120,9 +159,36 @@ inline bool orderStopsShort(
     return path.back().x != goalX || path.back().y != goalY;
 }
 
+inline bool openRampSide(
+    const Grid& grid,
+    NavLayer layer,
+    int fromX,
+    int fromY,
+    int toX,
+    int toY,
+    const std::vector<PathCell>& taken,
+    int& sideX,
+    int& sideY) {
+    const int stepX = toX - fromX;
+    const int stepY = toY - fromY;
+    if (stepX == 0 || stepY == 0 || stepX > 1 || stepX < -1 || stepY > 1 || stepY < -1) {
+        return false;
+    }
+    const int options[2][2] = {{fromX + stepX, fromY}, {fromX, fromY + stepY}};
+    for (const auto& option : options) {
+        if (canStepCell(grid, layer, fromX, fromY, option[0], option[1]) && !cellTaken(&taken, option[0], option[1])) {
+            sideX = option[0];
+            sideY = option[1];
+            return true;
+        }
+    }
+    return false;
+}
+
 inline Vector2 rampCenterFirst(
     Vector2 position,
     Vector2 target,
+    NavLayer layer,
     const Grid& grid,
     const std::vector<PathCell>& taken) {
     int fromX = 0;
@@ -133,29 +199,25 @@ inline Vector2 rampCenterFirst(
         return target;
     }
     const Tile* here = tileAt(grid, fromX, fromY);
-    const int stepX = toX - fromX;
-    const int stepY = toY - fromY;
-    if (here == nullptr || !here->ramp || stepX == 0 || stepY == 0 || stepX > 1 || stepX < -1 || stepY > 1 ||
-        stepY < -1) {
+    if (here == nullptr || !here->ramp || (toX == fromX && toY == fromY)) {
         return target;
     }
-    if (!cellTaken(&taken, fromX + stepX, fromY) && !cellTaken(&taken, fromX, fromY + stepY)) {
-        return target;
+    Vector2 exit = target;
+    int sideX = 0;
+    int sideY = 0;
+    if (openRampSide(grid, layer, fromX, fromY, toX, toY, taken, sideX, sideY)) {
+        exit = cellCenter(grid, sideX, sideY);
     }
-    const Vector2 center = cellCenter(grid, fromX, fromY);
-    const Vector2 toExit = sub(target, center);
-    const float exitLen2 = toExit.x * toExit.x + toExit.y * toExit.y;
-    if (exitLen2 <= 0.0001f) {
-        return target;
+    return exit;
+}
+
+inline Vector2 rampCenter(const Grid& grid, Vector2 position) {
+    int cellX = 0;
+    int cellY = 0;
+    if (!worldToCell(grid, position, cellX, cellY)) {
+        return position;
     }
-    const Vector2 toUnit = sub(position, center);
-    const float along = (toUnit.x * toExit.x + toUnit.y * toExit.y) / exitLen2;
-    const float cross = toUnit.x * toExit.y - toUnit.y * toExit.x;
-    const float tolerance = grid.cellSize * 0.05f;
-    if (along < 0.0f || cross * cross > tolerance * tolerance * exitLen2) {
-        return center;
-    }
-    return target;
+    return cellCenter(grid, cellX, cellY);
 }
 
 inline void moveSystem(World& world, const Grid& grid, float dt) {
@@ -164,6 +226,12 @@ inline void moveSystem(World& world, const Grid& grid, float dt) {
         Mover& m = world.movers[i];
         std::vector<PathCell> taken;
         blockingCells(world, i, t.layer, grid, taken);
+        int holdCellX = 0;
+        int holdCellY = 0;
+        if (worldToCell(grid, t.position, holdCellX, holdCellY) && !cellTaken(&taken, holdCellX, holdCellY)) {
+            m.holdX = holdCellX;
+            m.holdY = holdCellY;
+        }
         if (m.ordered) {
             steerToOrder(m, t.layer, t.position, grid, taken, true);
         }
@@ -173,23 +241,52 @@ inline void moveSystem(World& world, const Grid& grid, float dt) {
             m.waypoints.erase(m.waypoints.begin());
         }
         const Vector2 previous = t.position;
-        const Vector2 stepTarget = rampCenterFirst(t.position, m.target, grid, taken);
+        int cellX = 0;
+        int cellY = 0;
+        const Tile* here = worldToCell(grid, t.position, cellX, cellY) ? tileAt(grid, cellX, cellY) : nullptr;
+        const bool onRamp = here != nullptr && here->ramp;
+        if (!onRamp) {
+            m.rampHeld = false;
+        }
+        Vector2 stepTarget = m.target;
+        if (onRamp) {
+            const Vector2 exit = rampCenterFirst(t.position, m.target, t.layer, grid, taken);
+            int exitX = 0;
+            int exitY = 0;
+            const bool leaving = worldToCell(grid, exit, exitX, exitY) && (exitX != cellX || exitY != cellY);
+            const Vector2 center = cellCenter(grid, cellX, cellY);
+            if (leaving && !m.rampHeld && distance(t.position, center) > grid.cellSize * 0.05f) {
+                stepTarget = center;
+            } else if (leaving) {
+                m.rampHeld = true;
+                stepTarget = exit;
+            }
+        }
         moveOnGrid(t.position, stepTarget, t.layer, grid, m.speed, dt, &taken);
         const Vector2 delta = sub(t.position, previous);
         bool noStep = false;
-        const bool closed = m.ordered && orderStopsShort(grid, t.layer, t.position, m.order, taken, &noStep);
+        const bool stoppedShort = orderStopsShort(grid, t.layer, t.position, m.order, taken, &noStep);
+        const bool againstUnit = flushAgainstUnit(grid, t.position, m.target, taken);
+        const bool closed = m.ordered && (stoppedShort || againstUnit);
         if (!closed) {
             m.blockedFor = 0.0f;
-        } else if (noStep || m.blockedFor > 0.0f) {
+        } else if (noStep || againstUnit || m.blockedFor > 0.0f) {
             m.blockedFor += dt;
             if (m.blockedFor >= kBlockedOrderSeconds) {
                 m.ordered = false;
                 m.blockedFor = 0.0f;
                 m.waypoints.clear();
-                m.target = t.position;
+                if (againstUnit && m.holdX >= 0 && m.holdY >= 0) {
+                    m.target = cellCenter(grid, m.holdX, m.holdY);
+                } else {
+                    m.target = t.position;
+                }
             }
         }
-        if (length(delta) > 0.001f) {
+        const float step = length(delta);
+        m.moving = step > 0.001f;
+        if (m.moving) {
+            m.traveled += step;
             m.facing = normalize(delta);
         }
     }

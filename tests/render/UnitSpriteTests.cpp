@@ -16,3 +16,17 @@ TEST_CASE("unit sprite center is opaque and the corner is empty") {
     REQUIRE(sprite.rgba[center] == 255);
     REQUIRE(sprite.rgba[corner] == 0);
 }
+
+TEST_CASE("trimSprite keeps the lowest opaque pixel on the bottom row") {
+    SpriteImage image;
+    image.width = 3;
+    image.height = 2;
+    image.rgba.assign(3 * 2 * 4, 0);
+    image.rgba[4] = 10;
+    image.rgba[7] = 255;
+    trimSprite(image);
+    REQUIRE(image.width == 1);
+    REQUIRE(image.height == 1);
+    REQUIRE(image.rgba[0] == 10);
+    REQUIRE(image.rgba[3] == 255);
+}

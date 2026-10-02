@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform/Camera.hpp"
+#include "render/UnitSprite.hpp"
 
 #include <vector>
 
@@ -16,6 +17,7 @@ struct GlVertex {
 struct GlSpriteVertex {
     float x = 0.0f;
     float y = 0.0f;
+    float z = 0.0f;
     float u = 0.0f;
     float v = 0.0f;
     float red = 0.0f;
@@ -43,6 +45,7 @@ struct GlDraw {
     void clear(float red, float green, float blue);
     void triangle(ScreenPoint a, ScreenPoint b, ScreenPoint c, float za, float zb, float zc, int red, int green, int blue);
     void line(ScreenPoint a, ScreenPoint b, float za, float zb, int red, int green, int blue);
-    void sprite(ScreenPoint feet, int pixelWidth, int pixelHeight, int red, int green, int blue);
+    void setSprite(const SpriteImage& image);
+    void sprite(ScreenPoint feet, int pixelWidth, int pixelHeight, int red, int green, int blue, float depth, bool flip);
     void flush();
 };

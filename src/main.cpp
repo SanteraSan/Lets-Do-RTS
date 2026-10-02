@@ -7,6 +7,7 @@
 #include "platform/Camera.hpp"
 #include "platform/Window.hpp"
 #include "render/DrawWorld.hpp"
+#include "render/Png.hpp"
 
 #include <iostream>
 #include <string>
@@ -33,6 +34,15 @@ int main() {
         return 1;
     }
     logger.log(LogLevel::Info, "window open");
+
+    SpriteImage infantry;
+    if (!loadPngFile(RTS_INFANTRY_PATH, infantry)) {
+        logger.log(LogLevel::Warn, "could not load infantry sprite");
+        infantry = makeUnitSprite();
+    } else {
+        trimSprite(infantry);
+    }
+    window.draw.setSprite(infantry);
 
     World world;
     const Entity scout = create(world);
@@ -134,6 +144,12 @@ int main() {
     mover(world, subB)->radius = 1.6f;
 
     Selection selection;
+    EventBus<OrderEvent> orders;
+    EventBus<SelectEvent> selections;
+    EventBus<SpeedEvent> speeds;
+    connectOrders(orders, world, grid);
+    connectSelection(selections, selection);
+    connectSpeed(speeds, world);
     InputFrame input;
     FixedTimestep step;
     Uint32 lastTicks = SDL_GetTicks();
@@ -149,7 +165,8 @@ int main() {
         constexpr int kPanPixels = 12;
         panCameraDirections(camera, input.panLeft, input.panRight, input.panUp, input.panDown, kPanPixels);
         dragCamera(camera, cameraDrag, input.middleDown, input.mouse);
-        applyInput(world, selection, input, camera, grid);
+        applyInput(
+            world, selection, input, camera, grid, orders, selections, speeds, infantry.width, infantry.height);
 
         const Uint32 now = SDL_GetTicks();
         const float rawSeconds = static_cast<float>(now - lastTicks) / 1000.0f;
@@ -161,7 +178,7 @@ int main() {
         }
 
         if (window.beginFrame()) {
-            drawWorld(window.draw, world, grid, camera, selection);
+            drawWorld(window.draw, world, grid, camera, selection, infantry.width, infantry.height);
             window.endFrame();
         }
 

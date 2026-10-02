@@ -13,17 +13,20 @@ target_compile_features(rts_math INTERFACE cxx_std_17)
 
 find_package(SDL2 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(ZLIB REQUIRED)
 add_library(rts_platform
     src/platform/Window.cpp
     src/platform/DebugDraw.cpp
     src/platform/GlDraw.cpp
     src/render/DrawWorld.cpp
+    src/render/Png.cpp
 )
 target_include_directories(rts_platform PUBLIC "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(rts_platform PUBLIC SDL2::SDL2 OpenGL::GL)
+target_link_libraries(rts_platform PUBLIC SDL2::SDL2 OpenGL::GL ZLIB::ZLIB)
 
 add_executable(rts_game src/main.cpp)
 target_link_libraries(rts_game PRIVATE rts_platform)
+target_compile_definitions(rts_game PRIVATE RTS_INFANTRY_PATH="${CMAKE_SOURCE_DIR}/assets/units/infantry.png")
 
 enable_testing()
 find_package(Catch2 3 CONFIG REQUIRED)
@@ -37,6 +40,7 @@ add_executable(rts_tests
     tests/platform/CameraTests.cpp
     tests/platform/BindingTests.cpp
     tests/ecs/WorldTests.cpp
+    tests/ecs/EventBusTests.cpp
     tests/ecs/SelectionTests.cpp
     tests/nav/GridTests.cpp
     tests/nav/ApproachTests.cpp
@@ -44,10 +48,13 @@ add_executable(rts_tests
     tests/nav/GridMoveTests.cpp
     tests/render/AppearanceTests.cpp
     tests/render/UnitSpriteTests.cpp
+    tests/render/PngTests.cpp
+    tests/render/GroundSpriteTests.cpp
     tests/render/UnitCubeTests.cpp
     tests/render/StandLiftTests.cpp
 )
 target_link_libraries(rts_tests PRIVATE rts_math rts_platform Catch2::Catch2WithMain)
+target_compile_definitions(rts_tests PRIVATE RTS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 if(RTS_ENABLE_SANITIZERS AND NOT MSVC)
     target_compile_options(rts_tests PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)

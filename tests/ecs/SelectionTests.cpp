@@ -52,6 +52,47 @@ TEST_CASE("hitUnit selects an air unit on its raised cube") {
     REQUIRE(hitUnit(world, onCube, camera, grid) == id);
 }
 
+TEST_CASE("hitUnit selects a ground soldier inside the sprite") {
+    World world;
+    Grid grid;
+    grid.cellSize = 4.0f;
+    const Entity id = create(world);
+    transform(world, id)->position = Vector2{0.0f, 0.0f};
+    mover(world, id)->radius = 2.0f;
+    const Camera camera{};
+    const SpriteScreen frame =
+        groundSpriteScreen(transform(world, id)->position, mover(world, id)->facing, 0.0f, grid.cellSize, 1, 100, camera);
+    const ScreenPoint body{frame.feet.x, frame.feet.y - frame.pixelHeight / 2};
+    REQUIRE(hitUnit(world, body, camera, grid, 1, 100) == id);
+}
+
+TEST_CASE("hitUnit misses a ground soldier beside the sprite") {
+    World world;
+    Grid grid;
+    grid.cellSize = 4.0f;
+    const Entity id = create(world);
+    transform(world, id)->position = Vector2{0.0f, 0.0f};
+    mover(world, id)->radius = 2.0f;
+    const Camera camera{};
+    const SpriteScreen frame =
+        groundSpriteScreen(transform(world, id)->position, mover(world, id)->facing, 0.0f, grid.cellSize, 1, 100, camera);
+    const ScreenPoint aside{frame.feet.x + frame.pixelWidth + 8, frame.feet.y - frame.pixelHeight / 2};
+    REQUIRE(hitUnit(world, aside, camera, grid, 1, 100) == kInvalidEntity);
+}
+
+TEST_CASE("hitUnit keeps the boat cube when the soldier picture is set") {
+    World world;
+    Grid grid;
+    grid.cellSize = 4.0f;
+    const Entity id = create(world);
+    transform(world, id)->position = Vector2{0.0f, 0.0f};
+    transform(world, id)->layer = NavLayer::Surface;
+    mover(world, id)->radius = 2.0f;
+    const Camera camera{};
+    const ScreenPoint onCube = worldToScreen(Vector2{1.0f, 0.0f}, camera);
+    REQUIRE(hitUnit(world, onCube, camera, grid, 1, 100) == id);
+}
+
 TEST_CASE("left click selects a unit and click on empty space clears it") {
     World world;
     Selection selection;
@@ -71,6 +112,68 @@ TEST_CASE("left click selects a unit and click on empty space clears it") {
     clickEmpty.mouse = worldToScreen(Vector2{50.0f, 50.0f}, camera);
     applyInput(world, selection, clickEmpty, camera, Grid{});
     REQUIRE(selection.entity == kInvalidEntity);
+}
+
+TEST_CASE("a left click publishes a selection and the subscriber selects the unit") {
+    World world;
+    Selection selection;
+    const Entity id = create(world);
+    transform(world, id)->position = Vector2{0.0f, 0.0f};
+    mover(world, id)->radius = 2.0f;
+    const Camera camera{};
+
+    EventBus<OrderEvent> orders;
+    EventBus<SelectEvent> selections;
+    SelectEvent seen{};
+    int count = 0;
+    subscribe<SelectEvent>(selections, [&](const SelectEvent& event) {
+        seen = event;
+        count += 1;
+        applySelection(selection, event);
+    });
+
+    InputFrame click;
+    click.leftClick = true;
+    click.mouse = worldToScreen(Vector2{0.0f, 0.0f}, camera);
+    EventBus<SpeedEvent> speeds;
+    applyInput(world, selection, click, camera, Grid{}, orders, selections, speeds);
+
+    REQUIRE(count == 1);
+    REQUIRE(seen.unit == id);
+    REQUIRE(selection.entity == id);
+}
+
+TEST_CASE("a right click publishes an order and the subscriber sends the unit") {
+    World world;
+    Selection selection;
+    const Entity id = create(world);
+    selection.entity = id;
+    transform(world, id)->position = Vector2{0.2f, 0.2f};
+    const Camera camera{};
+    Grid grid;
+    REQUIRE(makeGrid(grid, 4, 4));
+
+    EventBus<OrderEvent> orders;
+    OrderEvent seen{};
+    int count = 0;
+    subscribe<OrderEvent>(orders, [&](const OrderEvent& order) {
+        seen = order;
+        count += 1;
+        issueOrder(world, grid, order);
+    });
+
+    InputFrame click;
+    click.rightClick = true;
+    click.mouse = worldToScreen(cellCenter(grid, 2, 1), camera);
+    EventBus<SelectEvent> selections;
+    EventBus<SpeedEvent> speeds;
+    applyInput(world, selection, click, camera, grid, orders, selections, speeds);
+
+    REQUIRE(count == 1);
+    REQUIRE(seen.unit == id);
+    REQUIRE(mover(world, id)->ordered);
+    REQUIRE(mover(world, id)->order.x == Catch::Approx(cellCenter(grid, 2, 1).x));
+    REQUIRE(mover(world, id)->order.y == Catch::Approx(cellCenter(grid, 2, 1).y));
 }
 
 TEST_CASE("right click on open ground snaps the target to the cell center") {
@@ -211,6 +314,35 @@ TEST_CASE("speed keys do nothing without a selection") {
     walk.keyWalk = true;
     applyInput(world, selection, walk, camera, Grid{});
     REQUIRE(mover(world, id)->speed == Catch::Approx(10.0f));
+}
+
+TEST_CASE("a speed key publishes a speed and the subscriber sets it") {
+    World world;
+    Selection selection;
+    const Entity id = create(world);
+    selection.entity = id;
+    mover(world, id)->speed = 10.0f;
+    const Camera camera{};
+
+    EventBus<OrderEvent> orders;
+    EventBus<SelectEvent> selections;
+    EventBus<SpeedEvent> speeds;
+    SpeedEvent seen{};
+    int count = 0;
+    subscribe<SpeedEvent>(speeds, [&](const SpeedEvent& event) {
+        seen = event;
+        count += 1;
+        applySpeed(world, event);
+    });
+
+    InputFrame walk;
+    walk.keyWalk = true;
+    applyInput(world, selection, walk, camera, Grid{}, orders, selections, speeds);
+
+    REQUIRE(count == 1);
+    REQUIRE(seen.unit == id);
+    REQUIRE(seen.speed == Catch::Approx(kWalkSpeed));
+    REQUIRE(mover(world, id)->speed == Catch::Approx(kWalkSpeed));
 }
 
 TEST_CASE("keys 1 and 2 change selected unit speed") {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+#include <utility>
 #include <vector>
 
 struct SpriteImage {
@@ -35,4 +37,60 @@ inline SpriteImage makeUnitSprite() {
         }
     }
     return image;
+}
+
+inline void trimSprite(SpriteImage& image) {
+    if (image.width <= 0 || image.height <= 0) {
+        return;
+    }
+    const std::size_t need =
+        static_cast<std::size_t>(image.width) * static_cast<std::size_t>(image.height) * 4;
+    if (image.rgba.size() < need) {
+        return;
+    }
+    int minX = image.width;
+    int minY = image.height;
+    int maxX = -1;
+    int maxY = -1;
+    for (int y = 0; y < image.height; ++y) {
+        for (int x = 0; x < image.width; ++x) {
+            const std::size_t alpha =
+                (static_cast<std::size_t>(y) * static_cast<std::size_t>(image.width) + static_cast<std::size_t>(x)) * 4 + 3;
+            if (image.rgba[alpha] == 0) {
+                continue;
+            }
+            if (x < minX) {
+                minX = x;
+            }
+            if (y < minY) {
+                minY = y;
+            }
+            if (x > maxX) {
+                maxX = x;
+            }
+            if (y > maxY) {
+                maxY = y;
+            }
+        }
+    }
+    if (maxX < 0) {
+        return;
+    }
+    const int width = maxX - minX + 1;
+    const int height = maxY - minY + 1;
+    std::vector<unsigned char> trimmed(static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4);
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            const std::size_t source =
+                (static_cast<std::size_t>(y + minY) * static_cast<std::size_t>(image.width) + static_cast<std::size_t>(x + minX)) * 4;
+            const std::size_t dest = (static_cast<std::size_t>(y) * static_cast<std::size_t>(width) + static_cast<std::size_t>(x)) * 4;
+            trimmed[dest] = image.rgba[source];
+            trimmed[dest + 1] = image.rgba[source + 1];
+            trimmed[dest + 2] = image.rgba[source + 2];
+            trimmed[dest + 3] = image.rgba[source + 3];
+        }
+    }
+    image.width = width;
+    image.height = height;
+    image.rgba = std::move(trimmed);
 }

@@ -1,9 +1,11 @@
 #pragma once
 
+#include "ecs/EventBus.hpp"
 #include "ecs/World.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "nav/UnitBlock.hpp"
 #include "platform/Input.hpp"
+#include "render/GroundSprite.hpp"
 #include "render/StandLift.hpp"
 #include "render/UnitCube.hpp"
 
@@ -63,12 +65,29 @@ inline bool pickCell(const Grid& grid, ScreenPoint mouse, Camera camera, int& ou
     return found;
 }
 
-inline Entity hitUnit(const World& world, ScreenPoint mouse, Camera camera, const Grid& grid) {
+inline Entity hitUnit(
+    const World& world, ScreenPoint mouse, Camera camera, const Grid& grid, int pictureWidth = 0, int pictureHeight = 0) {
     for (int i = static_cast<int>(world.entities.size()) - 1; i >= 0; --i) {
         const std::size_t index = static_cast<std::size_t>(i);
         const float feet = standLift(grid, world.transforms[index].position, world.transforms[index].layer);
         const Vector2 facing = length(world.movers[index].facing) == 0.0f ? Vector2{1.0f, 0.0f}
                                                                            : normalize(world.movers[index].facing);
+        if (world.transforms[index].layer == NavLayer::Ground && pictureWidth > 0 && pictureHeight > 0) {
+            const float bob = walkBob(world.movers[index].traveled, world.movers[index].moving);
+            const SpriteScreen frame = groundSpriteScreen(
+                world.transforms[index].position,
+                facing,
+                feet,
+                grid.cellSize,
+                pictureWidth,
+                pictureHeight,
+                camera,
+                bob);
+            if (pointOnSprite(mouse, frame)) {
+                return world.entities[index];
+            }
+            continue;
+        }
         const UnitCube cube = visibleUnitCube(
             world.transforms[index].position, facing, world.movers[index].radius * 2.0f, camera.yScale);
         for (int faceIndex = 0; faceIndex < cube.count; ++faceIndex) {
@@ -85,45 +104,123 @@ inline Entity hitUnit(const World& world, ScreenPoint mouse, Camera camera, cons
     return kInvalidEntity;
 }
 
+struct OrderEvent {
+    Entity unit = kInvalidEntity;
+    Vector2 point{};
+};
+
+struct SelectEvent {
+    Entity unit = kInvalidEntity;
+};
+
+struct SpeedEvent {
+    Entity unit = kInvalidEntity;
+    float speed = 0.0f;
+};
+
+inline void applySpeed(World& world, SpeedEvent event) {
+    Mover* selectedMover = mover(world, event.unit);
+    if (selectedMover == nullptr) {
+        return;
+    }
+    selectedMover->speed = event.speed;
+}
+
+inline void connectSpeed(EventBus<SpeedEvent>& bus, World& world) {
+    subscribe<SpeedEvent>(bus, [&world](const SpeedEvent& event) { applySpeed(world, event); });
+}
+
+inline void applySelection(Selection& selection, SelectEvent event) {
+    selection.entity = event.unit;
+}
+
+inline void connectSelection(EventBus<SelectEvent>& bus, Selection& selection) {
+    subscribe<SelectEvent>(bus, [&selection](const SelectEvent& event) { applySelection(selection, event); });
+}
+
+inline void issueOrder(World& world, const Grid& grid, OrderEvent order) {
+    Mover* selectedMover = mover(world, order.unit);
+    Transform* selectedTransform = transform(world, order.unit);
+    int stopX = 0;
+    int stopY = 0;
+    if (selectedMover == nullptr || selectedTransform == nullptr ||
+        !approachOrder(grid, selectedTransform->layer, selectedTransform->position, order.point, stopX, stopY)) {
+        return;
+    }
+    std::vector<PathCell> taken;
+    const int self = indexOf(world, order.unit);
+    if (self >= 0) {
+        blockingCells(world, static_cast<std::size_t>(self), selectedTransform->layer, grid, taken);
+    }
+    selectedMover->order = order.point;
+    selectedMover->ordered = true;
+    selectedMover->blockedFor = 0.0f;
+    selectedMover->rampHeld = false;
+    steerToOrder(*selectedMover, selectedTransform->layer, selectedTransform->position, grid, taken);
+}
+
+inline void connectOrders(EventBus<OrderEvent>& bus, World& world, const Grid& grid) {
+    subscribe<OrderEvent>(bus, [&world, &grid](const OrderEvent& order) { issueOrder(world, grid, order); });
+}
+
 inline void applyInput(
-    World& world, Selection& selection, const InputFrame& input, Camera camera, const Grid& grid) {
+    World& world,
+    Selection& selection,
+    const InputFrame& input,
+    Camera camera,
+    const Grid& grid,
+    EventBus<OrderEvent>& orders,
+    EventBus<SelectEvent>& selections,
+    EventBus<SpeedEvent>& speeds,
+    int pictureWidth = 0,
+    int pictureHeight = 0) {
     int pickedX = 0;
     int pickedY = 0;
     const bool picked = pickCell(grid, input.mouse, camera, pickedX, pickedY);
     const Vector2 worldPoint = picked ? cellCenter(grid, pickedX, pickedY) : screenToWorld(input.mouse, camera);
 
     if (input.leftClick) {
-        selection.entity = hitUnit(world, input.mouse, camera, grid);
+        publish(selections, SelectEvent{hitUnit(world, input.mouse, camera, grid, pictureWidth, pictureHeight)});
     }
 
-    if (input.rightClick) {
-        Mover* selectedMover = mover(world, selection.entity);
-        Transform* selectedTransform = transform(world, selection.entity);
+    if (input.rightClick && mover(world, selection.entity) != nullptr && transform(world, selection.entity) != nullptr) {
         int stopX = 0;
         int stopY = 0;
-        if (selectedMover != nullptr && selectedTransform != nullptr &&
-            approachOrder(grid, selectedTransform->layer, selectedTransform->position, worldPoint, stopX, stopY)) {
-            std::vector<PathCell> taken;
-            const int self = indexOf(world, selection.entity);
-            if (self >= 0) {
-                blockingCells(world, static_cast<std::size_t>(self), selectedTransform->layer, grid, taken);
-            }
-            selectedMover->order = worldPoint;
-            selectedMover->ordered = true;
-            selectedMover->blockedFor = 0.0f;
-            steerToOrder(
-                *selectedMover, selectedTransform->layer, selectedTransform->position, grid, taken);
+        if (approachOrder(
+                grid,
+                transform(world, selection.entity)->layer,
+                transform(world, selection.entity)->position,
+                worldPoint,
+                stopX,
+                stopY)) {
+            publish(orders, OrderEvent{selection.entity, worldPoint});
         }
     }
 
-    Mover* selectedMover = mover(world, selection.entity);
-    if (selectedMover == nullptr) {
+    if (mover(world, selection.entity) == nullptr) {
         return;
     }
     if (input.keyWalk) {
-        selectedMover->speed = kWalkSpeed;
+        publish(speeds, SpeedEvent{selection.entity, kWalkSpeed});
     }
     if (input.keyRun) {
-        selectedMover->speed = kRunSpeed;
+        publish(speeds, SpeedEvent{selection.entity, kRunSpeed});
     }
+}
+
+inline void applyInput(
+    World& world,
+    Selection& selection,
+    const InputFrame& input,
+    Camera camera,
+    const Grid& grid,
+    int pictureWidth = 0,
+    int pictureHeight = 0) {
+    EventBus<OrderEvent> orders;
+    EventBus<SelectEvent> selections;
+    EventBus<SpeedEvent> speeds;
+    connectOrders(orders, world, grid);
+    connectSelection(selections, selection);
+    connectSpeed(speeds, world);
+    applyInput(world, selection, input, camera, grid, orders, selections, speeds, pictureWidth, pictureHeight);
 }

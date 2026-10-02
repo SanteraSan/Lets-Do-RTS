@@ -81,6 +81,12 @@ inline void moveOnGrid(
         const bool yOpen = staysOpen(alongY);
         Vector2 clamped = next;
         clampInsideCell(grid, fromX, fromY, clamped);
+        if (xOpen && yOpen) {
+            if (distance(clamped, target) + 0.0001f < distance(position, target)) {
+                position = clamped;
+            }
+            return;
+        }
         if (distance(clamped, target) + 0.0001f < distance(position, target)) {
             position = clamped;
             return;
